@@ -63,6 +63,17 @@ func (suite *PasswordServiceTestSuite) TestHash_EdgeCases() {
 	hLong, err := suite.service.HashPassword(longPwd)
 	suite.NoError(err)
 	suite.NotEmpty(hLong)
+
+	// single character password
+	hSingle, err := suite.service.HashPassword("a")
+	suite.NoError(err)
+	suite.NotEmpty(hSingle)
+
+	// password with special characters
+	specialPwd := "!@#$%^&*()_+-=[]{}|;:,.<>?"
+	hSpecial, err := suite.service.HashPassword(specialPwd)
+	suite.NoError(err)
+	suite.NotEmpty(hSpecial)
 }
 
 func TestPasswordServiceTestSuite(t *testing.T) {
