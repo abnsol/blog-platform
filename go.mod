@@ -4,8 +4,8 @@ go 1.24.5
 
 require (
 	github.com/joho/godotenv v1.5.1
-	github.com/stretchr/testify v1.8.1
-	golang.org/x/crypto v0.31.0
+	github.com/stretchr/testify v1.8.4
+	golang.org/x/crypto v0.35.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.1
 )
