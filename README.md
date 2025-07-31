@@ -1,1 +1,1 @@
-# blog-platform
+# Blog-Platform API
