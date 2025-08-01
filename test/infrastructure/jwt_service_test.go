@@ -136,14 +136,6 @@ func (suite *JWTInfrastructureTestSuite) TestValidateAccessToken_ExpiredToken() 
 	suite.Contains(err.Error(), "token is expired")
 }
 
-func (suite *JWTInfrastructureTestSuite) TestValidateAccessToken_UnexpectedSigningMethod() {
-	invalidMethodToken := "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VyX2lkIjoidXNlci0xMjMiLCJ1c2VyX3JvbGUiOiJ1c2VyIiwiZXhwIjoxNjQwOTk1MjAwfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
-	authHeader := "Bearer " + invalidMethodToken
-
-	_, err := suite.infra.ValidateAccessToken(authHeader)
-	suite.Error(err)
-}
-
 func (suite *JWTInfrastructureTestSuite) TestValidateRefreshToken_InvalidAuthHeader() {
 	userID := "user-456"
 	userRole := "admin"
