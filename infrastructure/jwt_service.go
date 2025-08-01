@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/blog-platform/domain"
 	"github.com/golang-jwt/jwt/v5"
 )
 
@@ -13,16 +14,14 @@ type JWTInfrastructure struct {
 	RefreshSecret []byte
 }
 
-type TokenClaims struct {
-	UserID string `json:"user_id"`
-	UserRole string `json:"user_role"`
-	jwt.RegisteredClaims
-}
-
 func (infra *JWTInfrastructure) GenerateAccessToken(userID string, userRole string) (string, error) {
-	claims := TokenClaims{
-		UserID: userID,
-		UserRole: userRole,
+	if userID == "" || userRole == "" {
+		return "", errors.New("userID and userRole cannot be empty")
+	}
+
+	claims := domain.TokenClaims{
+		UserID:    userID,
+		UserRole:  userRole,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(60 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
@@ -34,7 +33,11 @@ func (infra *JWTInfrastructure) GenerateAccessToken(userID string, userRole stri
 }
 
 func (infra *JWTInfrastructure) GenerateRefreshToken(userID string, userRole string) (string, error) {
-	claims := TokenClaims{
+	if userID == "" || userRole == "" {
+		return "", errors.New("userID and userRole cannot be empty")
+	}
+
+	claims := domain.TokenClaims{
 		UserID: userID,
 		UserRole: userRole,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -47,19 +50,19 @@ func (infra *JWTInfrastructure) GenerateRefreshToken(userID string, userRole str
 	return token.SignedString(infra.RefreshSecret)
 }
 
-func (infra *JWTInfrastructure) validateToken(authHeader string, secret []byte) (*TokenClaims, error) {
+func (infra *JWTInfrastructure) validateToken(authHeader string, secret []byte) (*domain.TokenClaims, error) {
 	if authHeader == "" {
-		return &TokenClaims{}, errors.New("log in inorder to access this route")
+		return &domain.TokenClaims{}, errors.New("log in inorder to access this route")
 	}
 
 	authParts := strings.Split(authHeader, " ")
 	if len(authParts) != 2 || strings.ToLower(authParts[0]) != "bearer" {
-		return &TokenClaims{}, errors.New("invalid authorization header")
+		return &domain.TokenClaims{}, errors.New("invalid authorization header")
 	}
 
 	tokenString := authParts[1]
 
-	token, err := jwt.ParseWithClaims(tokenString, &TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &domain.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("unexpected signing method")
 		}
@@ -69,7 +72,7 @@ func (infra *JWTInfrastructure) validateToken(authHeader string, secret []byte) 
 		return nil, err
 	}
 
-	claims, ok := token.Claims.(*TokenClaims)
+	claims, ok := token.Claims.(*domain.TokenClaims)
 	if !ok || !token.Valid {
 		return nil, errors.New("invalid token")
 	}
@@ -86,10 +89,10 @@ func (infra *JWTInfrastructure) validateToken(authHeader string, secret []byte) 
 	return claims, nil
 }
 
-func (infra *JWTInfrastructure) ValidateAccessToken(authHeader string) (*TokenClaims, error) {
+func (infra *JWTInfrastructure) ValidateAccessToken(authHeader string) (*domain.TokenClaims, error) {
 	return infra.validateToken(authHeader, infra.AccessSecret)
 }
 
-func (infra *JWTInfrastructure) ValidateRefreshToken(token string) (*TokenClaims, error) {
+func (infra *JWTInfrastructure) ValidateRefreshToken(token string) (*domain.TokenClaims, error) {
 	return infra.validateToken(token, infra.RefreshSecret)
 }

@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/blog-platform/domain"
 	"github.com/blog-platform/infrastructure"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/suite"
@@ -34,14 +35,14 @@ func (suite *JWTInfrastructureTestSuite) TestGenerateAccessToken() {
 	suite.NoError(err)
 	suite.NotEmpty(tokenString)
 
-	token, err := jwt.ParseWithClaims(tokenString, &infrastructure.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &domain.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return suite.accessSecret, nil
 	})
 
 	suite.NoError(err)
 	suite.True(token.Valid)
 
-	claims, ok := token.Claims.(*infrastructure.TokenClaims)
+	claims, ok := token.Claims.(*domain.TokenClaims)
 	suite.True(ok)
 	suite.Equal(userID, claims.UserID)
 	suite.Equal(userRole, claims.UserRole)
@@ -57,14 +58,14 @@ func (suite *JWTInfrastructureTestSuite) TestGenerateRefreshToken() {
 	suite.NoError(err)
 	suite.NotEmpty(tokenString)
 
-	token, err := jwt.ParseWithClaims(tokenString, &infrastructure.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+	token, err := jwt.ParseWithClaims(tokenString, &domain.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		return suite.refreshSecret, nil
 	})
 
 	suite.NoError(err)
 	suite.True(token.Valid)
 
-	claims, ok := token.Claims.(*infrastructure.TokenClaims)
+	claims, ok := token.Claims.(*domain.TokenClaims)
 	suite.True(ok)
 	suite.Equal(userID, claims.UserID)
 	suite.Equal(userRole, claims.UserRole)
@@ -118,7 +119,7 @@ func (suite *JWTInfrastructureTestSuite) TestValidateAccessToken_InvalidTokenSig
 func (suite *JWTInfrastructureTestSuite) TestValidateAccessToken_ExpiredToken() {
 	userID := "user-123"
 	userRole := "user"
-	claims := infrastructure.TokenClaims{
+	claims := domain.TokenClaims{
 		UserID:   userID,
 		UserRole: userRole,
 		RegisteredClaims: jwt.RegisteredClaims{
@@ -182,7 +183,7 @@ func (suite *JWTInfrastructureTestSuite) TestValidateRefreshToken_InvalidTokenSi
 func (suite *JWTInfrastructureTestSuite) TestValidateRefreshToken_ExpiredToken() {
 	userID := "user-456"
 	userRole := "admin"
-	claims := infrastructure.TokenClaims{
+	claims := domain.TokenClaims{
 		UserID:   userID,
 		UserRole: userRole,
 		RegisteredClaims: jwt.RegisteredClaims{
