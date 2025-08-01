@@ -1,7 +1,7 @@
 package routers
 
 import (
-	"github.com/abeni-al7/blog-platform/delivery/controllers"
+	"github.com/blog-platform/delivery/controllers"
 	"github.com/gin-gonic/gin"
 )
 

@@ -1,14 +1,12 @@
-module github.com/abeni-al7/blog-platform
+module github.com/blog-platform
 
-go 1.23.0
-
-toolchain go1.24.4
+go 1.24.5
 
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/gin-gonic/gin v1.10.1
 	github.com/joho/godotenv v1.5.1
-	github.com/stretchr/testify v1.10.0
+	github.com/stretchr/testify v1.9.0
 	gorm.io/driver/postgres v1.6.0
 	gorm.io/gorm v1.30.1
 )

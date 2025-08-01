@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"net/http"
+	"strings"
 
-	"github.com/abeni-al7/blog-platform/domain"
+	"github.com/blog-platform/domain"
 	"github.com/gin-gonic/gin"
 )
 
@@ -15,14 +16,34 @@ func NewBlogController(blogUsecase domain.IBlogUsecase) *BlogController {
 	return &BlogController{blogUsecase}
 }
 
+type CreateBlogRequest struct {
+	Title   string `json:"title" binding:"required"`
+	Content string `json:"content" binding:"required"`
+	Tags    string `json:"tags" binding:"required"`
+}
+
 func (c *BlogController) CreateBlog(ctx *gin.Context) {
-	var blog domain.Blog
-	err := ctx.ShouldBindJSON(&blog)
-	if err != nil {
+	var req CreateBlogRequest
+	if err := ctx.ShouldBindJSON(&req); err != nil {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
-	err = c.blogUsecase.CreateBlog(ctx.Request.Context(), &blog)
+
+	blog := domain.Blog{
+		Title:   req.Title,
+		Content: req.Content,
+	}
+
+	// Split tags by comma and trim spaces
+	var tags []string
+	for _, tag := range strings.Split(req.Tags, ",") {
+		t := strings.TrimSpace(tag)
+		if t != "" {
+			tags = append(tags, t)
+		}
+	}
+
+	err := c.blogUsecase.CreateBlog(ctx.Request.Context(), &blog, tags)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create blog"})
 		return

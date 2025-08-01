@@ -5,17 +5,24 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/abeni-al7/blog-platform/domain"
-
+	"github.com/blog-platform/domain"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/suite"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
 
-func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
+type BlogRepoTestSuite struct {
+	suite.Suite
+	db   *gorm.DB
+	mock sqlmock.Sqlmock
+	repo domain.IBlogRepository // Change from *BlogRepository to domain.IBlogRepository
+}
+
+func (suite *BlogRepoTestSuite) SetupTest() {
 	db, mock, err := sqlmock.New()
-	assert.NoError(t, err)
+	assert.NoError(suite.T(), err)
 
 	dialector := postgres.New(postgres.Config{
 		Conn:                 db,
@@ -25,28 +32,30 @@ func setupMockDB(t *testing.T) (*gorm.DB, sqlmock.Sqlmock) {
 	gormDB, err := gorm.Open(dialector, &gorm.Config{
 		Logger: logger.Default.LogMode(logger.Silent),
 	})
-	assert.NoError(t, err)
-	return gormDB, mock
+	assert.NoError(suite.T(), err)
+
+	suite.db = gormDB
+	suite.mock = mock
+	suite.repo = NewBlogRepository(gormDB)
 }
 
-func TestCreateBlog(t *testing.T) {
-	db, mock := setupMockDB(t)
-
-	repo := NewBlogRepository(db)
-
-	ctx := context.Background()
+func (suite *BlogRepoTestSuite) TestCreateBlog() {
 	blog := &domain.Blog{
 		Title:   "Test Blog",
 		Content: "This is a test blog content.",
 		ID:      1,
 	}
-	mock.ExpectBegin()
-	mock.ExpectExec(`INSERT INTO "blogs"`).
+	suite.mock.ExpectBegin()
+	suite.mock.ExpectExec(`INSERT INTO "blogs"`).
 		WithArgs(blog.Title, blog.Content, blog.ID).
 		WillReturnResult(sqlmock.NewResult(1, 1))
-	mock.ExpectCommit()
+	suite.mock.ExpectCommit()
 
-	err := repo.Create(ctx, blog)
-	assert.NoError(t, err)
-	assert.NoError(t, mock.ExpectationsWereMet())
+	err := suite.repo.Create(context.Background(), blog)
+	assert.NoError(suite.T(), err)
+	assert.NoError(suite.T(), suite.mock.ExpectationsWereMet())
+}
+
+func TestBlogRepoTestSuite(t *testing.T) {
+	suite.Run(t, new(BlogRepoTestSuite))
 }
