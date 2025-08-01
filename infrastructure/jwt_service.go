@@ -14,6 +14,16 @@ type JWTInfrastructure struct {
 	RefreshSecret []byte
 }
 
+func NewJWTInfrastructure(accessSecret, refreshSecret []byte) (*JWTInfrastructure, error) {
+	if len(accessSecret) == 0 || len(refreshSecret) == 0 {
+		return nil, errors.New("access and refresh secrets cannot be empty")
+	}
+	return &JWTInfrastructure{
+		AccessSecret:  accessSecret,
+		RefreshSecret: refreshSecret,
+	}, nil
+}
+
 func (infra *JWTInfrastructure) GenerateAccessToken(userID string, userRole string) (string, error) {
 	if userID == "" || userRole == "" {
 		return "", errors.New("userID and userRole cannot be empty")
@@ -93,6 +103,6 @@ func (infra *JWTInfrastructure) ValidateAccessToken(authHeader string) (*domain.
 	return infra.validateToken(authHeader, infra.AccessSecret)
 }
 
-func (infra *JWTInfrastructure) ValidateRefreshToken(token string) (*domain.TokenClaims, error) {
-	return infra.validateToken(token, infra.RefreshSecret)
+func (infra *JWTInfrastructure) ValidateRefreshToken(authHeader string) (*domain.TokenClaims, error) {
+	return infra.validateToken(authHeader, infra.RefreshSecret)
 }
