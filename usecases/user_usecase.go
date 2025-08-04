@@ -47,18 +47,18 @@ func (uu *UserUsecase) Register(user *domain.User) (domain.User, error) {
 	}
 
 	user.Status = "inactive"
-	userID, err := uu.userRepo.Register(user)
+	registeredUser, err := uu.userRepo.Register(user)
 	if err != nil {
 		return domain.User{}, errors.New("unable to register user")
 	}
 
-	emailContent := fmt.Sprintf("%v://%v:%v/user/%v/activate", os.Getenv("PROTOCOL"), os.Getenv("DOMAIN"), os.Getenv("PORT"), userID)
-	err = uu.emailService.SendEmail(os.Getenv("EMAIL_SENDER"), []string{user.Email}, emailContent)
+	emailContent := fmt.Sprintf("%v://%v:%v/user/%v/activate", os.Getenv("PROTOCOL"), os.Getenv("DOMAIN"), os.Getenv("PORT"), registeredUser.ID)
+	err = uu.emailService.SendEmail(os.Getenv("EMAIL_SENDER"), []string{registeredUser.Email}, emailContent)
 	if err != nil {
 		return domain.User{}, errors.New("unable to send activation link")
 	}
 
-	return *user, nil
+	return registeredUser, nil
 }
 
 func (uu *UserUsecase) validatePassword(password string) bool {
