@@ -35,7 +35,8 @@ func (s *TokenRepositoryTestSuite) SetupTest() {
 }
 
 func (s *TokenRepositoryTestSuite) TearDownTest() {
-    s.mock.ExpectationsWereMet()
+	err := s.mock.ExpectationsWereMet()
+	s.NoError(err)
 }
 
 func (s *TokenRepositoryTestSuite) TestFetchByContent_Success() {

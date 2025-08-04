@@ -19,6 +19,9 @@ func NewJWTInfrastructure(accessSecret, refreshSecret []byte, tokenRepo domain.I
 	if len(accessSecret) == 0 || len(refreshSecret) == 0 {
 		return nil, errors.New("access and refresh secrets cannot be empty")
 	}
+	if tokenRepo == nil {
+        return nil, errors.New("token repository cannot be nil")
+    }
 	return &JWTInfrastructure{
 		AccessSecret:  accessSecret,
 		RefreshSecret: refreshSecret,
