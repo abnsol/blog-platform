@@ -25,3 +25,8 @@ func (m *MockBlogRepo) LinkTagToBlog(ctx context.Context, blogID int64, tagID in
 	args := m.Called(ctx, blogID, tagID)
 	return args.Error(0)
 }
+
+func (m *MockBlogRepo) FetchAll(ctx context.Context) ([]*domain.Blog, error) {
+	args := m.Called(ctx)
+	return args.Get(0).([]*domain.Blog), args.Error(1)
+}

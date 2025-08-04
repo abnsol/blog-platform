@@ -50,3 +50,12 @@ func (c *BlogController) CreateBlog(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Blog created successfully", "blog": blog})
 }
+
+func (c *BlogController) GetBlogs(ctx *gin.Context) {
+	blogs, err := c.blogUsecase.FetchAllBlogs(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch blogs"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"blogs": blogs})
+}
