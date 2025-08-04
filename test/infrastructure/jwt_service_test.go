@@ -6,6 +6,7 @@ import (
 
 	"github.com/blog-platform/domain"
 	"github.com/blog-platform/infrastructure"
+	mocks "github.com/blog-platform/test/mocks/infrastructure"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/stretchr/testify/suite"
 )
@@ -13,6 +14,7 @@ import (
 type JWTInfrastructureTestSuite struct {
 	suite.Suite
 	infra         *infrastructure.JWTInfrastructure
+	mockTokenRepo *mocks.MockTokenRepository
 	accessSecret  []byte
 	refreshSecret []byte
 }
@@ -20,9 +22,11 @@ type JWTInfrastructureTestSuite struct {
 func (suite *JWTInfrastructureTestSuite) SetupTest() {
 	suite.accessSecret = []byte("access_secret_for_test")
 	suite.refreshSecret = []byte("refresh_secret_for_test")
+	suite.mockTokenRepo = new(mocks.MockTokenRepository)
 	suite.infra = &infrastructure.JWTInfrastructure{
 		AccessSecret:  suite.accessSecret,
 		RefreshSecret: suite.refreshSecret,
+		TokenRepo:     suite.mockTokenRepo,
 	}
 }
 
@@ -78,6 +82,9 @@ func (suite *JWTInfrastructureTestSuite) TestValidateAccessToken_Success() {
 	tokenString, _ := suite.infra.GenerateAccessToken(userID, userRole)
 	authHeader := "Bearer " + tokenString
 
+	// Mock the repository call
+	suite.mockTokenRepo.On("FetchByContent", tokenString).Return(domain.Token{Content: tokenString, Status: "active"}, nil)
+
 	claims, err := suite.infra.ValidateAccessToken(authHeader)
 
 	suite.NoError(err)
@@ -107,9 +114,11 @@ func (suite *JWTInfrastructureTestSuite) TestValidateAccessToken_InvalidAuthHead
 func (suite *JWTInfrastructureTestSuite) TestValidateAccessToken_InvalidTokenSignature() {
 	userID := "user-123"
 	userRole := "user"
-	otherInfra := &infrastructure.JWTInfrastructure{AccessSecret: []byte("wrong_secret")}
+	otherInfra := &infrastructure.JWTInfrastructure{AccessSecret: []byte("wrong_secret"), TokenRepo: suite.mockTokenRepo}
 	tokenString, _ := otherInfra.GenerateAccessToken(userID, userRole)
 	authHeader := "Bearer " + tokenString
+
+	suite.mockTokenRepo.On("FetchByContent", tokenString).Return(domain.Token{Content: tokenString, Status: "active"}, nil)
 
 	_, err := suite.infra.ValidateAccessToken(authHeader)
 	suite.Error(err)
@@ -130,6 +139,8 @@ func (suite *JWTInfrastructureTestSuite) TestValidateAccessToken_ExpiredToken() 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, _ := token.SignedString(suite.accessSecret)
 	authHeader := "Bearer " + tokenString
+
+	suite.mockTokenRepo.On("FetchByContent", tokenString).Return(domain.Token{Content: tokenString, Status: "active"}, nil)
 
 	_, err := suite.infra.ValidateAccessToken(authHeader)
 	suite.Error(err)
@@ -152,6 +163,9 @@ func (suite *JWTInfrastructureTestSuite) TestValidateRefreshToken_Success() {
 	tokenString, _ := suite.infra.GenerateRefreshToken(userID, userRole)
 	authHeader := "Bearer " + tokenString
 
+	// Mock the repository call
+	suite.mockTokenRepo.On("FetchByContent", tokenString).Return(domain.Token{Content: tokenString, Status: "active"}, nil)
+
 	claims, err := suite.infra.ValidateRefreshToken(authHeader)
 
 	suite.NoError(err)
@@ -163,9 +177,11 @@ func (suite *JWTInfrastructureTestSuite) TestValidateRefreshToken_Success() {
 func (suite *JWTInfrastructureTestSuite) TestValidateRefreshToken_InvalidTokenSignature() {
 	userID := "user-456"
 	userRole := "admin"
-	otherInfra := &infrastructure.JWTInfrastructure{RefreshSecret: []byte("wrong_secret")}
+	otherInfra := &infrastructure.JWTInfrastructure{RefreshSecret: []byte("wrong_secret"), TokenRepo: suite.mockTokenRepo}
 	tokenString, _ := otherInfra.GenerateRefreshToken(userID, userRole)
 	authHeader := "Bearer " + tokenString
+
+	suite.mockTokenRepo.On("FetchByContent", tokenString).Return(domain.Token{Content: tokenString, Status: "active"}, nil)
 
 	_, err := suite.infra.ValidateRefreshToken(authHeader)
 	suite.Error(err)
@@ -185,6 +201,8 @@ func (suite *JWTInfrastructureTestSuite) TestValidateRefreshToken_ExpiredToken()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, _ := token.SignedString(suite.refreshSecret)
 	authHeader := "Bearer " + tokenString
+
+	suite.mockTokenRepo.On("FetchByContent", tokenString).Return(domain.Token{Content: tokenString, Status: "active"}, nil)
 
 	_, err := suite.infra.ValidateRefreshToken(authHeader)
 	suite.Error(err)

@@ -12,15 +12,17 @@ import (
 type JWTInfrastructure struct {
 	AccessSecret []byte
 	RefreshSecret []byte
+	TokenRepo domain.ITokenRepository
 }
 
-func NewJWTInfrastructure(accessSecret, refreshSecret []byte) (*JWTInfrastructure, error) {
+func NewJWTInfrastructure(accessSecret, refreshSecret []byte, tokenRepo domain.ITokenRepository) (*JWTInfrastructure, error) {
 	if len(accessSecret) == 0 || len(refreshSecret) == 0 {
 		return nil, errors.New("access and refresh secrets cannot be empty")
 	}
 	return &JWTInfrastructure{
 		AccessSecret:  accessSecret,
 		RefreshSecret: refreshSecret,
+		TokenRepo: tokenRepo,
 	}, nil
 }
 
@@ -71,6 +73,15 @@ func (infra *JWTInfrastructure) validateToken(authHeader string, secret []byte) 
 	}
 
 	tokenString := authParts[1]
+
+	tokenObj, err := infra.TokenRepo.FetchByContent(tokenString)
+	if err != nil {
+		return &domain.TokenClaims{}, errors.New("invalid token")
+	}
+
+	if tokenObj.Status == "blocked" {
+		return &domain.TokenClaims{}, errors.New("blocked token")
+	}
 
 	token, err := jwt.ParseWithClaims(tokenString, &domain.TokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {

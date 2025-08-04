@@ -6,3 +6,7 @@ type IJWTInfrastructure interface {
 	ValidateAccessToken(authHeader string) (*TokenClaims, error)
 	ValidateRefreshToken(token string) (*TokenClaims, error)
 }
+
+type ITokenRepository interface {
+	FetchByContent(content string) (Token, error)
+}
