@@ -26,8 +26,14 @@ type IUserUsecase interface {
 
 type IUserRepository interface {
 	Register(user *User) (User, error)
+	FetchByUsername(username string) (User, error)
+	FetchByEmail(email string) (User, error)
 }
 
 type IUserController interface {
 	Register(ctx *context.Context)
+}
+
+type IEmailInfrastructure interface {
+	SendEmail(from string, to []string, content string) error
 }
