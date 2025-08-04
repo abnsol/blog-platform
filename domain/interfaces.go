@@ -10,3 +10,8 @@ type IJWTInfrastructure interface {
 type ITokenRepository interface {
 	FetchByContent(content string) (Token, error)
 }
+
+type IPasswordInfrastructure interface {
+	HashPassword(password string) (string, error)
+	ComparePassword(correctPassword []byte, inputPassword []byte) error
+}
