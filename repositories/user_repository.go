@@ -2,6 +2,7 @@ package repositories
 
 import (
 	"errors"
+	"strconv"
 
 	"github.com/blog-platform/domain"
 	"gorm.io/gorm"
@@ -37,6 +38,34 @@ func (ur *UserRepository) FetchByEmail(email string) (domain.User, error) {
 func (ur *UserRepository) FetchByUsername(username string) (domain.User, error) {
 	var user domain.User
 	err := ur.DB.Where("username = ?", username).First(&user).Error
+	if err != nil {
+		return domain.User{}, errors.New("user not found")
+	}
+	return user, nil
+}
+
+func (ur *UserRepository) ActivateAccount(idStr string) error {
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return errors.New("invalid id")
+	}
+
+	result := ur.DB.Model(&domain.User{}).Where("id = ?", id).Update("status", "active")
+	if result.Error != nil || result.RowsAffected == 0 {
+		return errors.New("unable to activate user")
+	}
+
+	return nil
+}
+
+func (ur *UserRepository) Fetch(idStr string) (domain.User, error) {
+	var user domain.User
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return domain.User{}, errors.New("invalid id")
+	}
+
+	err = ur.DB.Where("id = ?", id).First(&user).Error
 	if err != nil {
 		return domain.User{}, errors.New("user not found")
 	}

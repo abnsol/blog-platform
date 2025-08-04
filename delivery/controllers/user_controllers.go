@@ -45,3 +45,14 @@ func (uc *UserController) Register(ctx *gin.Context)  {
 
 	ctx.JSON(http.StatusOK, gin.H{"data": user})
 }
+
+func (uc *UserController) ActivateAccount(ctx *gin.Context) {
+	id := ctx.Param("id")
+	err := uc.userUsecase.ActivateAccount(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
+		return
+	}
+	
+	ctx.JSON(http.StatusOK, gin.H{"message": "user account activated"})
+}

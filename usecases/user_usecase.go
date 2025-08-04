@@ -89,3 +89,17 @@ func (uu *UserUsecase) validatePassword(password string) bool {
 
     return hasMinLen && hasUpper && hasLower && hasNumber && hasSpecial
 }
+
+func (uu *UserUsecase) ActivateAccount(id string) error {
+	_, err := uu.userRepo.Fetch(id)
+	if err != nil {
+		return err
+	}
+
+	err = uu.userRepo.ActivateAccount(id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
