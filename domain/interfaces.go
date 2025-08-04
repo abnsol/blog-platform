@@ -1,5 +1,9 @@
 package domain
 
+import (
+	"context"
+)
+
 type IJWTInfrastructure interface {
 	GenerateAccessToken(userID string, userRole string) (string, error)
 	GenerateRefreshToken(userID string, userRole string) (string, error)
@@ -14,4 +18,16 @@ type ITokenRepository interface {
 type IPasswordInfrastructure interface {
 	HashPassword(password string) (string, error)
 	ComparePassword(correctPassword []byte, inputPassword []byte) error
+}
+
+type IUserUsecase interface {
+	Register(user *User) (User, error)
+}
+
+type IUserRepository interface {
+	Register(user *User) (User, error)
+}
+
+type IUserController interface {
+	Register(ctx *context.Context)
 }
