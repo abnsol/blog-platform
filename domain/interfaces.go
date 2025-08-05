@@ -29,3 +29,7 @@ type IPasswordInfrastructure interface {
 	HashPassword(password string) (string, error)
 	ComparePassword(correctPassword []byte, inputPassword []byte) error
 }
+
+type IEmailInfrastructure interface {
+	SendEmail(to []string, subject string, body string) error
+}
