@@ -18,7 +18,13 @@ func NewBlogUsecase(repo domain.IBlogRepository) domain.IBlogUsecase {
 }
 
 func (uc blogUsecase) CreateBlog(ctx context.Context, blog *domain.Blog, tags []string) error {
+	// prevent empty strings from being added
+	if blog.Title == "" || blog.Content == "" {
+		return errors.New("title and content cannot be empty")
+	}
+
 	err := uc.blogRepo.Create(ctx, blog)
+
 	if err != nil {
 		return errors.New("failed to create blog")
 	}
