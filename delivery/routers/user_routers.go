@@ -11,7 +11,8 @@ import (
 func AuthRoutes(group *gin.RouterGroup) {
 	ur := repositories.NewUserRepository(repositories.DB)
 	ei := infrastructure.NewEmailInfrastructure()
-	uu := usecases.NewUserUsecase(ur, ei)
+	pi := infrastructure.NewPasswordInfrastructure()
+	uu := usecases.NewUserUsecase(ur, ei, pi)
 	uc := controllers.NewUserController(uu)
 
 	group.POST("/register", uc.Register)

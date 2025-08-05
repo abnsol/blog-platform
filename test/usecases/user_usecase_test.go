@@ -8,6 +8,7 @@ import (
 	"github.com/blog-platform/domain"
 	"github.com/blog-platform/test/mocks"
 	"github.com/blog-platform/usecases"
+	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -15,13 +16,15 @@ type UserUsecaseTestSuite struct {
 	suite.Suite
 	userRepo     *mocks.MockUserRepository
 	emailService *mocks.MockEmailService
+	pwdService   *mocks.MockPasswordService
 	userUsecase  domain.IUserUsecase
 }
 
 func (suite *UserUsecaseTestSuite) SetupTest() {
 	suite.userRepo = new(mocks.MockUserRepository)
 	suite.emailService = new(mocks.MockEmailService)
-	suite.userUsecase = usecases.NewUserUsecase(suite.userRepo, suite.emailService)
+	suite.pwdService = new(mocks.MockPasswordService)
+	suite.userUsecase = usecases.NewUserUsecase(suite.userRepo, suite.emailService, suite.pwdService)
 	os.Setenv("PROTOCOL", "http")
 	os.Setenv("DOMAIN", "localhost")
 	os.Setenv("PORT", "8080")
@@ -39,7 +42,8 @@ func (suite *UserUsecaseTestSuite) TestRegister_Success() {
 
 	suite.userRepo.On("FetchByUsername", user.Username).Return(domain.User{}, errors.New("not found"))
 	suite.userRepo.On("FetchByEmail", user.Email).Return(domain.User{}, errors.New("not found"))
-	suite.userRepo.On("Register", user).Return(createdUser, nil)
+	suite.pwdService.On("HashPassword", user.Password).Return("hashedpassword", nil)
+	suite.userRepo.On("Register", mock.AnythingOfType("*domain.User")).Return(createdUser, nil)
 	suite.emailService.On("SendEmail", "test@example.com", []string{user.Email}, "http://localhost:8080/user/1/activate").Return(nil)
 
 	_, err := suite.userUsecase.Register(user)
@@ -100,7 +104,7 @@ func (suite *UserUsecaseTestSuite) TestRegister_UsernameInUse() {
 	suite.Equal("this username is already in use", err.Error())
 }
 
-func (suite *UserUsecaseTestSuite) TestRegister_RegistrationFails() {
+func (suite *UserUsecaseTestSuite) TestRegister_RegistrationFails_HashError() {
 	user := &domain.User{
 		Username: "testuser",
 		Email:    "test@example.com",
@@ -108,7 +112,23 @@ func (suite *UserUsecaseTestSuite) TestRegister_RegistrationFails() {
 	}
 	suite.userRepo.On("FetchByUsername", user.Username).Return(domain.User{}, errors.New("not found"))
 	suite.userRepo.On("FetchByEmail", user.Email).Return(domain.User{}, errors.New("not found"))
-	suite.userRepo.On("Register", user).Return(domain.User{}, errors.New("db error"))
+	suite.pwdService.On("HashPassword", user.Password).Return("", errors.New("hash error"))
+
+	_, err := suite.userUsecase.Register(user)
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestRegister_RegistrationFails_RepoError() {
+	user := &domain.User{
+		Username: "testuser",
+		Email:    "test@example.com",
+		Password: "Password123!",
+	}
+	suite.userRepo.On("FetchByUsername", user.Username).Return(domain.User{}, errors.New("not found"))
+	suite.userRepo.On("FetchByEmail", user.Email).Return(domain.User{}, errors.New("not found"))
+	suite.pwdService.On("HashPassword", user.Password).Return("hashedpassword", nil)
+	suite.userRepo.On("Register", mock.AnythingOfType("*domain.User")).Return(domain.User{}, errors.New("db error"))
+
 	_, err := suite.userUsecase.Register(user)
 	suite.Error(err)
 	suite.Equal("unable to register user", err.Error())
@@ -125,7 +145,8 @@ func (suite *UserUsecaseTestSuite) TestRegister_SendEmailFails() {
 
 	suite.userRepo.On("FetchByUsername", user.Username).Return(domain.User{}, errors.New("not found"))
 	suite.userRepo.On("FetchByEmail", user.Email).Return(domain.User{}, errors.New("not found"))
-	suite.userRepo.On("Register", user).Return(createdUser, nil)
+	suite.pwdService.On("HashPassword", user.Password).Return("hashedpassword", nil)
+	suite.userRepo.On("Register", mock.AnythingOfType("*domain.User")).Return(createdUser, nil)
 	suite.emailService.On("SendEmail", "test@example.com", []string{user.Email}, "http://localhost:8080/user/1/activate").Return(errors.New("email error"))
 
 	_, err := suite.userUsecase.Register(user)

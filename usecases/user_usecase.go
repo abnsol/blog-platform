@@ -13,12 +13,14 @@ import (
 type UserUsecase struct {
 	userRepo domain.IUserRepository
 	emailService domain.IEmailInfrastructure
+	passwordService domain.IPasswordInfrastructure
 }
 
-func NewUserUsecase(ur domain.IUserRepository, es domain.IEmailInfrastructure) *UserUsecase {
+func NewUserUsecase(ur domain.IUserRepository, es domain.IEmailInfrastructure, ps domain.IPasswordInfrastructure) *UserUsecase {
 	return &UserUsecase{
 		userRepo: ur,
 		emailService: es,
+		passwordService: ps,
 	}
 }
 
@@ -47,6 +49,12 @@ func (uu *UserUsecase) Register(user *domain.User) (domain.User, error) {
 	}
 
 	user.Status = "inactive"
+	user.Password, err = uu.passwordService.HashPassword(user.Password)
+	if err != nil {
+		return domain.User{}, errors.New(err.Error())
+	}
+
+
 	registeredUser, err := uu.userRepo.Register(user)
 	if err != nil {
 		return domain.User{}, errors.New("unable to register user")
