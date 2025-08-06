@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/blog-platform/domain"
@@ -49,4 +50,20 @@ func (c *BlogController) CreateBlog(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusCreated, gin.H{"message": "Blog created successfully", "blog": blog})
+}
+
+func (c *BlogController) GetBlogByID(ctx *gin.Context) {
+	idStr := ctx.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "Invalid blog ID"})
+		return
+	}
+
+	blog, err := c.blogUsecase.FetchBlogByID(ctx.Request.Context(), id)
+	if err != nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "Blog not found"})
+		return
+	}
+	ctx.JSON(http.StatusOK, blog)
 }
