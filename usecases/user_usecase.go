@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/mail"
 	"os"
+	"strconv"
 	"unicode"
 
 	"github.com/blog-platform/domain"
@@ -14,13 +15,15 @@ type UserUsecase struct {
 	userRepo domain.IUserRepository
 	emailService domain.IEmailInfrastructure
 	passwordService domain.IPasswordInfrastructure
+	jwtService domain.IJWTInfrastructure
 }
 
-func NewUserUsecase(ur domain.IUserRepository, es domain.IEmailInfrastructure, ps domain.IPasswordInfrastructure) *UserUsecase {
+func NewUserUsecase(ur domain.IUserRepository, es domain.IEmailInfrastructure, ps domain.IPasswordInfrastructure, js domain.IJWTInfrastructure) *UserUsecase {
 	return &UserUsecase{
 		userRepo: ur,
 		emailService: es,
 		passwordService: ps,
+		jwtService: js,
 	}
 }
 
@@ -69,13 +72,39 @@ func (uu *UserUsecase) Register(user *domain.User) (domain.User, error) {
 	return registeredUser, nil
 }
 
-func (uu *UserUsecase) Login(identifier string, password string) (domain.User, error) {
-	var user domain.User
-
+func (uu *UserUsecase) Login(identifier string, password string) (string, string, error) {
 	user, err := uu.userRepo.FetchByUsername(identifier)
-	if err == nil {
-		
+	if err != nil {
+		_, err := mail.ParseAddress(identifier)
+		if err != nil {
+			return "", "", errors.New("invalid email format")
+		}
+
+		user, err = uu.userRepo.FetchByEmail(identifier)
+		if err != nil {
+			return  "", "", errors.New("invalid identifier")
+		}
 	}
+
+	if !uu.validatePassword(password) {
+		return  "", "", errors.New("invalid password format")
+	}
+	err = uu.passwordService.ComparePassword([]byte(user.Password), []byte(password))
+	if err != nil {
+		return  "", "", errors.New("invalid credentials")
+	}
+
+	accessToken, err := uu.jwtService.GenerateAccessToken(strconv.FormatInt(user.ID, 10), user.Role)
+	if err != nil {
+		return "", "", errors.New(err.Error())
+	}
+
+	refreshToken, err := uu.jwtService.GenerateRefreshToken(strconv.FormatInt(user.ID, 10), user.Role)
+	if err != nil {
+		return "", "", errors.New(err.Error())
+	}
+
+	return accessToken, refreshToken, nil
 }
 
 func (uu *UserUsecase) validatePassword(password string) bool {

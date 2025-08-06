@@ -13,6 +13,11 @@ type UserRegisterDTO struct {
 	Password string `json:"password"`
 }
 
+type UserLoginDTO struct {
+	Identifier string `json:"identifier"`
+	Password string `json:"password"`
+}
+
 type UserController struct {
 	userUsecase domain.IUserUsecase
 }
@@ -55,4 +60,25 @@ func (uc *UserController) ActivateAccount(ctx *gin.Context) {
 	}
 	
 	ctx.JSON(http.StatusOK, gin.H{"message": "user account activated"})
+}
+
+func (uc *UserController) Login(ctx *gin.Context) {
+	var userInput UserLoginDTO
+
+	if err := ctx.ShouldBindJSON(&userInput); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+
+	accessToken, refreshToken, err := uc.userUsecase.Login(userInput.Identifier, userInput.Password)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"access": accessToken,
+		"refresh": refreshToken,
+		"message": "Logged in successfully",
+	})
 }

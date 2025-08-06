@@ -1,6 +1,8 @@
 package routers
 
 import (
+	"os"
+
 	"github.com/blog-platform/delivery/controllers"
 	"github.com/blog-platform/infrastructure"
 	"github.com/blog-platform/repositories"
@@ -9,11 +11,15 @@ import (
 )
 
 func AuthRoutes(group *gin.RouterGroup) {
-	ur := repositories.NewUserRepository(repositories.DB)
+	DB := repositories.DB
+	ur := repositories.NewUserRepository(DB)
 	ei := infrastructure.NewSMTPEmailService()
 	pi := infrastructure.NewPasswordInfrastructure()
-	uu := usecases.NewUserUsecase(ur, ei, pi)
+	tr := repositories.NewTokenRepository(DB)
+	js := infrastructure.NewJWTInfrastructure([]byte(os.Getenv("JWT_ACCESS_SECRET")), []byte(os.Getenv("JWT_REFRESH_SECRET")), tr)
+	uu := usecases.NewUserUsecase(ur, ei, pi, js)
 	uc := controllers.NewUserController(uu)
 
 	group.POST("/register", uc.Register)
+	group.POST("/login", uc.Login)
 }
