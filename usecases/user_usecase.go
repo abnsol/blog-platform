@@ -40,12 +40,12 @@ func (uu *UserUsecase) Register(user *domain.User) (domain.User, error) {
 
 	_, err = uu.userRepo.FetchByUsername(user.Username)
 	if err == nil {
-		return domain.User{}, errors.New("this email is already in use")
+		return domain.User{}, errors.New("this username is already in use")
 	}
 
 	_, err = uu.userRepo.FetchByEmail(user.Email)
 	if err == nil {
-		return domain.User{}, errors.New("this username is already in use")
+		return domain.User{}, errors.New("this email is already in use")
 	}
 
 	user.Status = "inactive"
@@ -61,12 +61,21 @@ func (uu *UserUsecase) Register(user *domain.User) (domain.User, error) {
 	}
 
 	emailContent := fmt.Sprintf("%v://%v:%v/user/%v/activate", os.Getenv("PROTOCOL"), os.Getenv("DOMAIN"), os.Getenv("PORT"), registeredUser.ID)
-	err = uu.emailService.SendEmail(os.Getenv("EMAIL_SENDER"), []string{registeredUser.Email}, emailContent)
+	err = uu.emailService.SendEmail([]string{registeredUser.Email}, "Activate Account", emailContent)
 	if err != nil {
 		return domain.User{}, errors.New("unable to send activation link")
 	}
 
 	return registeredUser, nil
+}
+
+func (uu *UserUsecase) Login(identifier string, password string) (domain.User, error) {
+	var user domain.User
+
+	user, err := uu.userRepo.FetchByUsername(identifier)
+	if err == nil {
+		
+	}
 }
 
 func (uu *UserUsecase) validatePassword(password string) bool {
