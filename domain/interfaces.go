@@ -30,6 +30,10 @@ type IPasswordInfrastructure interface {
 	ComparePassword(correctPassword []byte, inputPassword []byte) error
 }
 
+type IEmailInfrastructure interface {
+	SendEmail(to []string, subject string, body string) error
+}
+
 type IUserUsecase interface {
 	Register(user *User) (User, error)
 	ActivateAccount(id string) error
@@ -46,8 +50,4 @@ type IUserRepository interface {
 type IUserController interface {
 	Register(ctx *context.Context)
 	ActivateAccount(ctx *context.Context)
-}
-
-type IEmailInfrastructure interface {
-	SendEmail(from string, to []string, content string) error
 }
