@@ -10,7 +10,7 @@ import (
 
 func AuthRoutes(group *gin.RouterGroup) {
 	ur := repositories.NewUserRepository(repositories.DB)
-	ei := infrastructure.NewEmailInfrastructure()
+	ei := infrastructure.NewSMTPEmailService()
 	pi := infrastructure.NewPasswordInfrastructure()
 	uu := usecases.NewUserUsecase(ur, ei, pi)
 	uc := controllers.NewUserController(uu)

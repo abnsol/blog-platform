@@ -61,7 +61,7 @@ func (uu *UserUsecase) Register(user *domain.User) (domain.User, error) {
 	}
 
 	emailContent := fmt.Sprintf("%v://%v:%v/user/%v/activate", os.Getenv("PROTOCOL"), os.Getenv("DOMAIN"), os.Getenv("PORT"), registeredUser.ID)
-	err = uu.emailService.SendEmail(os.Getenv("EMAIL_SENDER"), []string{registeredUser.Email}, emailContent)
+	err = uu.emailService.SendEmail([]string{registeredUser.Email}, "Activate Account", emailContent)
 	if err != nil {
 		return domain.User{}, errors.New("unable to send activation link")
 	}
