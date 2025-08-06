@@ -33,3 +33,21 @@ type IPasswordInfrastructure interface {
 type IEmailInfrastructure interface {
 	SendEmail(to []string, subject string, body string) error
 }
+
+type IUserUsecase interface {
+	Register(user *User) (User, error)
+	ActivateAccount(id string) error
+}
+
+type IUserRepository interface {
+	Register(user *User) (User, error)
+	FetchByUsername(username string) (User, error)
+	FetchByEmail(email string) (User, error)
+	ActivateAccount(idStr string) error
+	Fetch(idStr string) (User, error)
+}
+
+type IUserController interface {
+	Register(ctx *context.Context)
+	ActivateAccount(ctx *context.Context)
+}
