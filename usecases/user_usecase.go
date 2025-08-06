@@ -40,12 +40,12 @@ func (uu *UserUsecase) Register(user *domain.User) (domain.User, error) {
 
 	_, err = uu.userRepo.FetchByUsername(user.Username)
 	if err == nil {
-		return domain.User{}, errors.New("this email is already in use")
+		return domain.User{}, errors.New("this username is already in use")
 	}
 
 	_, err = uu.userRepo.FetchByEmail(user.Email)
 	if err == nil {
-		return domain.User{}, errors.New("this username is already in use")
+		return domain.User{}, errors.New("this email is already in use")
 	}
 
 	user.Status = "inactive"
@@ -67,6 +67,15 @@ func (uu *UserUsecase) Register(user *domain.User) (domain.User, error) {
 	}
 
 	return registeredUser, nil
+}
+
+func (uu *UserUsecase) Login(identifier string, password string) (domain.User, error) {
+	var user domain.User
+
+	user, err := uu.userRepo.FetchByUsername(identifier)
+	if err == nil {
+		
+	}
 }
 
 func (uu *UserUsecase) validatePassword(password string) bool {
