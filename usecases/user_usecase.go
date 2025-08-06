@@ -16,14 +16,16 @@ type UserUsecase struct {
 	emailService domain.IEmailInfrastructure
 	passwordService domain.IPasswordInfrastructure
 	jwtService domain.IJWTInfrastructure
+	tokenRepo domain.ITokenRepository
 }
 
-func NewUserUsecase(ur domain.IUserRepository, es domain.IEmailInfrastructure, ps domain.IPasswordInfrastructure, js domain.IJWTInfrastructure) *UserUsecase {
+func NewUserUsecase(ur domain.IUserRepository, es domain.IEmailInfrastructure, ps domain.IPasswordInfrastructure, js domain.IJWTInfrastructure, tr domain.ITokenRepository) *UserUsecase {
 	return &UserUsecase{
 		userRepo: ur,
 		emailService: es,
 		passwordService: ps,
 		jwtService: js,
+		tokenRepo: tr,
 	}
 }
 
@@ -100,6 +102,29 @@ func (uu *UserUsecase) Login(identifier string, password string) (string, string
 	}
 
 	refreshToken, err := uu.jwtService.GenerateRefreshToken(strconv.FormatInt(user.ID, 10), user.Role)
+	if err != nil {
+		return "", "", errors.New(err.Error())
+	}
+
+	accessTokenObj := domain.Token{
+		Type: "access",
+		Content: accessToken,
+		Status: "active",
+		UserID: user.ID,
+	}
+	refreshTokenObj := domain.Token{
+		Type: "refresh",
+		Content: refreshToken,
+		Status: "active",
+		UserID: user.ID,
+	}
+
+	err = uu.tokenRepo.Save(&accessTokenObj)
+	if err != nil {
+		return "", "", errors.New(err.Error())
+	}
+
+	err = uu.tokenRepo.Save(&refreshTokenObj)
 	if err != nil {
 		return "", "", errors.New(err.Error())
 	}

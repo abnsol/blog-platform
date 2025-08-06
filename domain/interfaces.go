@@ -23,6 +23,7 @@ type IJWTInfrastructure interface {
 
 type ITokenRepository interface {
 	FetchByContent(content string) (Token, error)
+	Save(token *Token) error
 }
 
 type IPasswordInfrastructure interface {

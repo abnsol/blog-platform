@@ -17,7 +17,7 @@ func AuthRoutes(group *gin.RouterGroup) {
 	pi := infrastructure.NewPasswordInfrastructure()
 	tr := repositories.NewTokenRepository(DB)
 	js := infrastructure.NewJWTInfrastructure([]byte(os.Getenv("JWT_ACCESS_SECRET")), []byte(os.Getenv("JWT_REFRESH_SECRET")), tr)
-	uu := usecases.NewUserUsecase(ur, ei, pi, js)
+	uu := usecases.NewUserUsecase(ur, ei, pi, js, tr)
 	uc := controllers.NewUserController(uu)
 
 	group.POST("/register", uc.Register)
