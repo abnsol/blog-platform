@@ -2,11 +2,17 @@ package infrastructure
 
 import (
 	"net/http"
+
+	"github.com/blog-platform/domain"
 	"github.com/gin-gonic/gin"
 )
 
 type Middleware struct {
-	tokenInfra JWTInfrastructure
+	tokenInfra domain.IJWTInfrastructure
+}
+
+func NewMiddleware(tokenInfra domain.IJWTInfrastructure) *Middleware {
+	return &Middleware{tokenInfra: tokenInfra}
 }
 
 func (m *Middleware) AuthMiddleware() gin.HandlerFunc {
@@ -15,7 +21,7 @@ func (m *Middleware) AuthMiddleware() gin.HandlerFunc {
 
 		claims, err := m.tokenInfra.ValidateAccessToken(authHeader)
 		if err != nil {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err})
+			ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 			ctx.Abort()
 			return
 		}
