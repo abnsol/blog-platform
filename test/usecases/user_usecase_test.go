@@ -17,6 +17,8 @@ type UserUsecaseTestSuite struct {
 	userRepo     *mocks.MockUserRepository
 	emailService *mocks.MockEmailService
 	pwdService   *mocks.MockPasswordService
+	jwtService   *mocks.MockJWTService
+	tokenRepo    *mocks.MockTokenRepository
 	userUsecase  domain.IUserUsecase
 }
 
@@ -24,7 +26,9 @@ func (suite *UserUsecaseTestSuite) SetupTest() {
 	suite.userRepo = new(mocks.MockUserRepository)
 	suite.emailService = new(mocks.MockEmailService)
 	suite.pwdService = new(mocks.MockPasswordService)
-	suite.userUsecase = usecases.NewUserUsecase(suite.userRepo, suite.emailService, suite.pwdService)
+	suite.jwtService = new(mocks.MockJWTService)
+	suite.tokenRepo = new(mocks.MockTokenRepository)
+	suite.userUsecase = usecases.NewUserUsecase(suite.userRepo, suite.emailService, suite.pwdService, suite.jwtService, suite.tokenRepo)
 	os.Setenv("PROTOCOL", "http")
 	os.Setenv("DOMAIN", "localhost")
 	os.Setenv("PORT", "8080")
@@ -44,7 +48,7 @@ func (suite *UserUsecaseTestSuite) TestRegister_Success() {
 	suite.userRepo.On("FetchByEmail", user.Email).Return(domain.User{}, errors.New("not found"))
 	suite.pwdService.On("HashPassword", user.Password).Return("hashedpassword", nil)
 	suite.userRepo.On("Register", mock.AnythingOfType("*domain.User")).Return(createdUser, nil)
-	suite.emailService.On("SendEmail", "test@example.com", []string{user.Email}, "http://localhost:8080/user/1/activate").Return(nil)
+	suite.emailService.On("SendEmail", []string{user.Email}, "Activate Account", "http://localhost:8080/user/1/activate").Return(nil)
 
 	_, err := suite.userUsecase.Register(user)
 	suite.NoError(err)
@@ -79,7 +83,7 @@ func (suite *UserUsecaseTestSuite) TestRegister_InvalidPassword() {
 	suite.Equal("password must be consisted of at least one uppercase character, one lowercase character, one punctuation character, one number and be at least of length 8", err.Error())
 }
 
-func (suite *UserUsecaseTestSuite) TestRegister_EmailInUse() {
+func (suite *UserUsecaseTestSuite) TestRegister_UsernameInUse() {
 	user := &domain.User{
 		Username: "testuser",
 		Email:    "test@example.com",
@@ -88,10 +92,10 @@ func (suite *UserUsecaseTestSuite) TestRegister_EmailInUse() {
 	suite.userRepo.On("FetchByUsername", user.Username).Return(domain.User{}, nil)
 	_, err := suite.userUsecase.Register(user)
 	suite.Error(err)
-	suite.Equal("this email is already in use", err.Error())
+	suite.Equal("this username is already in use", err.Error())
 }
 
-func (suite *UserUsecaseTestSuite) TestRegister_UsernameInUse() {
+func (suite *UserUsecaseTestSuite) TestRegister_EmailInUse() {
 	user := &domain.User{
 		Username: "testuser",
 		Email:    "test@example.com",
@@ -101,7 +105,7 @@ func (suite *UserUsecaseTestSuite) TestRegister_UsernameInUse() {
 	suite.userRepo.On("FetchByEmail", user.Email).Return(domain.User{}, nil)
 	_, err := suite.userUsecase.Register(user)
 	suite.Error(err)
-	suite.Equal("this username is already in use", err.Error())
+	suite.Equal("this email is already in use", err.Error())
 }
 
 func (suite *UserUsecaseTestSuite) TestRegister_RegistrationFails_HashError() {
@@ -147,7 +151,7 @@ func (suite *UserUsecaseTestSuite) TestRegister_SendEmailFails() {
 	suite.userRepo.On("FetchByEmail", user.Email).Return(domain.User{}, errors.New("not found"))
 	suite.pwdService.On("HashPassword", user.Password).Return("hashedpassword", nil)
 	suite.userRepo.On("Register", mock.AnythingOfType("*domain.User")).Return(createdUser, nil)
-	suite.emailService.On("SendEmail", "test@example.com", []string{user.Email}, "http://localhost:8080/user/1/activate").Return(errors.New("email error"))
+	suite.emailService.On("SendEmail", []string{user.Email}, "Activate Account", "http://localhost:8080/user/1/activate").Return(errors.New("email error"))
 
 	_, err := suite.userUsecase.Register(user)
 	suite.Error(err)
@@ -171,6 +175,111 @@ func (suite *UserUsecaseTestSuite) TestActivateAccount_ActivationFails() {
 	suite.userRepo.On("Fetch", "1").Return(domain.User{}, nil)
 	suite.userRepo.On("ActivateAccount", "1").Return(errors.New("db error"))
 	err := suite.userUsecase.ActivateAccount("1")
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestLogin_Success() {
+	user := &domain.User{
+		ID:       1,
+		Username: "testuser",
+		Password: "hashedpassword",
+		Role:     "user",
+	}
+	suite.userRepo.On("FetchByUsername", "testuser").Return(*user, nil)
+	suite.pwdService.On("ComparePassword", []byte(user.Password), []byte("Password123!")).Return(nil)
+	suite.jwtService.On("GenerateAccessToken", "1", "user").Return("access_token", nil)
+	suite.jwtService.On("GenerateRefreshToken", "1", "user").Return("refresh_token", nil)
+	suite.tokenRepo.On("Save", mock.AnythingOfType("*domain.Token")).Return(nil).Twice()
+
+	accessToken, refreshToken, err := suite.userUsecase.Login("testuser", "Password123!")
+
+	suite.NoError(err)
+	suite.Equal("access_token", accessToken)
+	suite.Equal("refresh_token", refreshToken)
+	suite.tokenRepo.AssertNumberOfCalls(suite.T(), "Save", 2)
+}
+
+func (suite *UserUsecaseTestSuite) TestLogin_InvalidIdentifier() {
+	suite.userRepo.On("FetchByUsername", "unknown").Return(domain.User{}, errors.New("not found"))
+	_, _, err := suite.userUsecase.Login("unknown", "Password123!")
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestLogin_InvalidPassword() {
+	user := &domain.User{
+		ID:       1,
+		Username: "testuser",
+		Password: "hashedpassword",
+	}
+	suite.userRepo.On("FetchByUsername", "testuser").Return(*user, nil)
+	suite.pwdService.On("ComparePassword", []byte(user.Password), []byte("WrongPassword!")).Return(errors.New("wrong password"))
+	_, _, err := suite.userUsecase.Login("testuser", "WrongPassword!")
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestLogin_GenerateAccessTokenError() {
+	user := &domain.User{
+		ID:       1,
+		Username: "testuser",
+		Password: "hashedpassword",
+		Role:     "user",
+	}
+	suite.userRepo.On("FetchByUsername", "testuser").Return(*user, nil)
+	suite.pwdService.On("ComparePassword", []byte(user.Password), []byte("Password123!")).Return(nil)
+	suite.jwtService.On("GenerateAccessToken", "1", "user").Return("", errors.New("jwt error"))
+
+	_, _, err := suite.userUsecase.Login("testuser", "Password123!")
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestLogin_GenerateRefreshTokenError() {
+	user := &domain.User{
+		ID:       1,
+		Username: "testuser",
+		Password: "hashedpassword",
+		Role:     "user",
+	}
+	suite.userRepo.On("FetchByUsername", "testuser").Return(*user, nil)
+	suite.pwdService.On("ComparePassword", []byte(user.Password), []byte("Password123!")).Return(nil)
+	suite.jwtService.On("GenerateAccessToken", "1", "user").Return("access_token", nil)
+	suite.jwtService.On("GenerateRefreshToken", "1", "user").Return("", errors.New("jwt error"))
+
+	_, _, err := suite.userUsecase.Login("testuser", "Password123!")
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestLogin_SaveAccessTokenError() {
+	user := &domain.User{
+		ID:       1,
+		Username: "testuser",
+		Password: "hashedpassword",
+		Role:     "user",
+	}
+	suite.userRepo.On("FetchByUsername", "testuser").Return(*user, nil)
+	suite.pwdService.On("ComparePassword", []byte(user.Password), []byte("Password123!")).Return(nil)
+	suite.jwtService.On("GenerateAccessToken", "1", "user").Return("access_token", nil)
+	suite.jwtService.On("GenerateRefreshToken", "1", "user").Return("refresh_token", nil)
+	suite.tokenRepo.On("Save", mock.AnythingOfType("*domain.Token")).Return(errors.New("db error")).Once()
+
+	_, _, err := suite.userUsecase.Login("testuser", "Password123!")
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestLogin_SaveRefreshTokenError() {
+	user := &domain.User{
+		ID:       1,
+		Username: "testuser",
+		Password: "hashedpassword",
+		Role:     "user",
+	}
+	suite.userRepo.On("FetchByUsername", "testuser").Return(*user, nil)
+	suite.pwdService.On("ComparePassword", []byte(user.Password), []byte("Password123!")).Return(nil)
+	suite.jwtService.On("GenerateAccessToken", "1", "user").Return("access_token", nil)
+	suite.jwtService.On("GenerateRefreshToken", "1", "user").Return("refresh_token", nil)
+	suite.tokenRepo.On("Save", mock.AnythingOfType("*domain.Token")).Return(nil).Once()
+	suite.tokenRepo.On("Save", mock.AnythingOfType("*domain.Token")).Return(errors.New("db error")).Once()
+
+	_, _, err := suite.userUsecase.Login("testuser", "Password123!")
 	suite.Error(err)
 }
 

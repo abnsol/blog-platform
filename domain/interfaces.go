@@ -25,6 +25,7 @@ type IJWTInfrastructure interface {
 
 type ITokenRepository interface {
 	FetchByContent(content string) (Token, error)
+	Save(token *Token) error
 }
 
 type IPasswordInfrastructure interface {
@@ -39,6 +40,7 @@ type IEmailInfrastructure interface {
 type IUserUsecase interface {
 	Register(user *User) (User, error)
 	ActivateAccount(id string) error
+	Login(identifier string, password string) (string, string, error)
 }
 
 type IUserRepository interface {
@@ -52,4 +54,5 @@ type IUserRepository interface {
 type IUserController interface {
 	Register(ctx *context.Context)
 	ActivateAccount(ctx *context.Context)
+	Login(ctx *context.Context)
 }
