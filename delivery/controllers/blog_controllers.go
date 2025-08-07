@@ -66,4 +66,13 @@ func (c *BlogController) GetBlogByID(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, blog)
+
+func (c *BlogController) GetBlogs(ctx *gin.Context) {
+	blogs, err := c.blogUsecase.FetchAllBlogs(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch blogs"})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"blogs": blogs})
+
 }
