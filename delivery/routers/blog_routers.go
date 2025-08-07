@@ -7,5 +7,8 @@ import (
 
 func RegisterBlogRoutes(router *gin.Engine, blogController *controllers.BlogController) {
 	router.POST("/blogs", blogController.CreateBlog)
+
+	router.GET("/blogs/:id", blogController.GetBlogByID)
+
 	router.GET("/blogs", blogController.GetBlogs)
 }

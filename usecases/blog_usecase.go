@@ -53,6 +53,19 @@ func (uc blogUsecase) CreateBlog(ctx context.Context, blog *domain.Blog, tags []
 	return nil
 }
 
+func (uc blogUsecase) FetchBlogByID(ctx context.Context, id int64) (*domain.Blog, error) {
+	if id <= 0 {
+		return nil, errors.New("invalid blog ID")
+	}
+
+	blog, err := uc.blogRepo.FetchByID(ctx, id)
+	if err != nil {
+		return nil, errors.New("failed to fetch blog")
+	}
+
+	return blog, nil
+
+
 func (uc *blogUsecase) FetchAllBlogs(ctx context.Context) ([]*domain.Blog, error) {
 	blogs, err := uc.blogRepo.FetchAll(ctx)
 	if err != nil {
