@@ -227,3 +227,28 @@ func (s *UserRepositoryTestSuite) TestGetUserProfile_NotFound() {
 	s.NoError(err)
 	s.Nil(user)
 }
+
+func (s *UserRepositoryTestSuite) TestUpdateUserProfile_Success() {
+	userID := int64(1)
+	updates := map[string]interface{}{
+		"Username": "updateduser",
+		"Bio":      "updated bio",
+	}
+	s.mock.ExpectBegin()
+	s.mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET "username"=$1,"bio"=$2 WHERE id = $3 AND "users"."deleted_at" IS NULL`)).
+		WithArgs("updateduser", "updated bio", userID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	s.mock.ExpectCommit()
+
+	err := s.repo.UpdateUserProfile(userID, updates)
+	s.NoError(err)
+}
+
+func (s *UserRepositoryTestSuite) TestUpdateUserProfile_NoFields() {
+	userID := int64(1)
+	updates := map[string]interface{}{
+		"NotAllowed": "value",
+	}
+	err := s.repo.UpdateUserProfile(userID, updates)
+	s.NoError(err)
+}

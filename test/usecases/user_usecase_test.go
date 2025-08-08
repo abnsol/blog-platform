@@ -301,3 +301,22 @@ func (suite *UserUsecaseTestSuite) TestGetUserProfile_NotFound() {
 	suite.NoError(err)
 	suite.Nil(user)
 }
+
+func (suite *UserUsecaseTestSuite) TestUpdateUserProfile_Success() {
+	userID := int64(1)
+	updates := map[string]interface{}{
+		"Username": "updateduser",
+		"Bio":      "updated bio",
+	}
+	suite.userRepo.On("UpdateUserProfile", userID, updates).Return(nil)
+	err := suite.userUsecase.UpdateUserProfile(userID, updates)
+	suite.NoError(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestUpdateUserProfile_NoFields() {
+	userID := int64(1)
+	updates := map[string]interface{}{}
+	suite.userRepo.On("UpdateUserProfile", userID, updates).Return(nil)
+	err := suite.userUsecase.UpdateUserProfile(userID, updates)
+	suite.NoError(err)
+}
