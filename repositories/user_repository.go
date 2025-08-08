@@ -71,3 +71,15 @@ func (ur *UserRepository) Fetch(idStr string) (domain.User, error) {
 	}
 	return user, nil
 }
+
+func (ur *UserRepository) GetUserProfile(userId int64) (*domain.User, error) {
+	var user domain.User
+	err := ur.DB.First(&user, userId).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
+}

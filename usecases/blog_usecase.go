@@ -64,7 +64,7 @@ func (uc blogUsecase) FetchBlogByID(ctx context.Context, id int64) (*domain.Blog
 	}
 
 	return blog, nil
-
+}
 
 func (uc *blogUsecase) FetchAllBlogs(ctx context.Context) ([]*domain.Blog, error) {
 	blogs, err := uc.blogRepo.FetchAll(ctx)

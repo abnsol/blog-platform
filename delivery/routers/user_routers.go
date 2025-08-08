@@ -19,7 +19,9 @@ func AuthRoutes(group *gin.RouterGroup) {
 	js := infrastructure.NewJWTInfrastructure([]byte(os.Getenv("JWT_ACCESS_SECRET")), []byte(os.Getenv("JWT_REFRESH_SECRET")), tr)
 	uu := usecases.NewUserUsecase(ur, ei, pi, js, tr)
 	uc := controllers.NewUserController(uu)
+	ao := infrastructure.NewMiddleware(js)
 
 	group.POST("/register", uc.Register)
 	group.POST("/login", uc.Login)
+	group.GET("/users/:id", ao.AccountOwnerMiddleware(), uc.GetProfile)
 }
