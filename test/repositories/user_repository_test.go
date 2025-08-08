@@ -224,6 +224,30 @@ func (s *UserRepositoryTestSuite) TestGetUserProfile_NotFound() {
 	s.Nil(user)
 }
 
+func (s *UserRepositoryTestSuite) TestUpdateUserProfile_Success() {
+	userID := int64(1)
+	updates := map[string]interface{}{
+		"Username": "updateduser",
+		"Bio":      "updated bio",
+	}
+	s.mock.ExpectBegin()
+	s.mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET "username"=$1,"bio"=$2 WHERE id = $3 AND "users"."deleted_at" IS NULL`)).
+		WithArgs("updateduser", "updated bio", userID).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	s.mock.ExpectCommit()
+
+	err := s.repo.UpdateUserProfile(userID, updates)
+	s.NoError(err)
+}
+
+func (s *UserRepositoryTestSuite) TestUpdateUserProfile_NoFields() {
+	userID := int64(1)
+	updates := map[string]interface{}{
+		"NotAllowed": "value",
+	}
+	err := s.repo.UpdateUserProfile(userID, updates)
+	s.NoError(err)
+}
 func (s *UserRepositoryTestSuite) TestResetPassword_Success() {
 	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE "users"."id" = $1 AND "users"."deleted_at" IS NULL ORDER BY "users"."id" LIMIT $2`)).
 		WithArgs(1, 1).
