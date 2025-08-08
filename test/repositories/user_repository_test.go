@@ -41,10 +41,6 @@ func (s *UserRepositoryTestSuite) TearDownTest() {
 	s.mock.ExpectationsWereMet()
 }
 
-func TestUserRepositoryTestSuite(t *testing.T) {
-	suite.Run(t, new(UserRepositoryTestSuite))
-}
-
 func (s *UserRepositoryTestSuite) TestRegister_Success() {
 	user := &domain.User{
 		Username: "testuser",
@@ -251,4 +247,47 @@ func (s *UserRepositoryTestSuite) TestUpdateUserProfile_NoFields() {
 	}
 	err := s.repo.UpdateUserProfile(userID, updates)
 	s.NoError(err)
+}
+func (s *UserRepositoryTestSuite) TestResetPassword_Success() {
+	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE "users"."id" = $1 AND "users"."deleted_at" IS NULL ORDER BY "users"."id" LIMIT $2`)).
+		WithArgs(1, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "password"}).AddRow(1, "old_hashed"))
+
+	s.mock.ExpectBegin()
+	s.mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET "password"=$1,"updated_at"=$2 WHERE "users"."deleted_at" IS NULL AND "id" = $3`)).
+		WithArgs("new_hashed", sqlmock.AnyArg(), 1).
+		WillReturnResult(sqlmock.NewResult(1, 1))
+	s.mock.ExpectCommit()
+	err := s.repo.ResetPassword("1", "new_hashed")
+	s.NoError(err)
+}
+
+func (s *UserRepositoryTestSuite) TestResetPassword_InvalidID() {
+	err := s.repo.ResetPassword("abc", "new_hashed")
+	s.Error(err)
+}
+
+func (s *UserRepositoryTestSuite) TestResetPassword_UserNotFound() {
+	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE "users"."id" = $1 AND "users"."deleted_at" IS NULL ORDER BY "users"."id" LIMIT $2`)).
+		WithArgs(1, 1).
+		WillReturnError(gorm.ErrRecordNotFound)
+	err := s.repo.ResetPassword("1", "new_hashed")
+	s.Error(err)
+}
+
+func (s *UserRepositoryTestSuite) TestResetPassword_UpdateError() {
+	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE "users"."id" = $1 AND "users"."deleted_at" IS NULL ORDER BY "users"."id" LIMIT $2`)).
+		WithArgs(1, 1).
+		WillReturnRows(sqlmock.NewRows([]string{"id", "password"}).AddRow(1, "old_hashed"))
+	s.mock.ExpectBegin()
+	s.mock.ExpectExec(regexp.QuoteMeta(`UPDATE "users" SET "password"=$1,"updated_at"=$2 WHERE "users"."deleted_at" IS NULL AND "id" = $3`)).
+		WithArgs("new_hashed", sqlmock.AnyArg(), 1).
+		WillReturnError(errors.New("db error"))
+	s.mock.ExpectRollback()
+	err := s.repo.ResetPassword("1", "new_hashed")
+	s.Error(err)
+}
+
+func TestUserRepositoryTestSuite(t *testing.T) {
+	suite.Run(t, new(UserRepositoryTestSuite))
 }

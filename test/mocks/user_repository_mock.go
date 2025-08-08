@@ -56,3 +56,7 @@ func (m *MockUserRepository) UpdateUserProfile(userID int64, updates map[string]
 	args := m.Called(userID, updates)
 	return args.Error(0)
 }
+func (m *MockUserRepository) ResetPassword(idStr string, newPassword string) error {
+	args := m.Called(idStr, newPassword)
+	return args.Error(0)
+}
