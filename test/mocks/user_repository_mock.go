@@ -45,3 +45,13 @@ func (m *MockUserRepository) Fetch(idStr string) (domain.User, error) {
 	}
 	return args.Get(0).(domain.User), args.Error(1)
 }
+
+func (m *MockUserRepository) Promote(idStr string) error {
+	args := m.Called(idStr)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) Demote(idStr string) error {
+	args := m.Called(idStr)
+	return args.Error(0)
+}
