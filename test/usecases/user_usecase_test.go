@@ -314,3 +314,18 @@ func (suite *UserUsecaseTestSuite) TestDemote_UserNotFound() {
 func TestUserUsecase(t *testing.T) {
 	suite.Run(t, new(UserUsecaseTestSuite))
 }
+
+func (suite *UserUsecaseTestSuite) TestGetUserProfile_Success() {
+	expectedUser := &domain.User{ID: 1, Username: "testuser", Email: "test@example.com"}
+	suite.userRepo.On("GetUserProfile", int64(1)).Return(expectedUser, nil)
+	user, err := suite.userUsecase.GetUserProfile(1)
+	suite.NoError(err)
+	suite.Equal(expectedUser, user)
+}
+
+func (suite *UserUsecaseTestSuite) TestGetUserProfile_NotFound() {
+	suite.userRepo.On("GetUserProfile", int64(2)).Return(nil, nil)
+	user, err := suite.userUsecase.GetUserProfile(2)
+	suite.NoError(err)
+	suite.Nil(user)
+}

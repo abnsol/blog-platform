@@ -50,7 +50,6 @@ func (r *BlogRepository) FetchByID(ctx context.Context, id int64) (*domain.Blog,
 	}
 	return &blog, nil
 }
-
 func (r *BlogRepository) FetchAll(ctx context.Context) ([]*domain.Blog, error) {
 	var blogs []*domain.Blog
 	if err := r.db.WithContext(ctx).Preload("User").Preload("Tags").

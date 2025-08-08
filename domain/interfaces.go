@@ -43,6 +43,7 @@ type IUserUsecase interface {
 	Register(user *User) (User, error)
 	ActivateAccount(id string) error
 	Login(identifier string, password string) (string, string, error)
+	GetUserProfile(userID int64) (*User, error)
 	Promote(id string) error
 	Demote(id string) error
 }
@@ -53,6 +54,7 @@ type IUserRepository interface {
 	FetchByEmail(email string) (User, error)
 	ActivateAccount(idStr string) error
 	Fetch(idStr string) (User, error)
+	GetUserProfile(userID int64) (*User, error)
 	Promote(idStr string) error
 	Demote(idStr string) error
 }
@@ -61,4 +63,5 @@ type IUserController interface {
 	Register(ctx *context.Context)
 	ActivateAccount(ctx *context.Context)
 	Login(ctx *context.Context)
+	GetProfile(ctx *context.Context)
 }

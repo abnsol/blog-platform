@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/blog-platform/domain"
 	"github.com/gin-gonic/gin"
@@ -81,6 +82,25 @@ func (uc *UserController) Login(ctx *gin.Context) {
 		"refresh": refreshToken,
 		"message": "Logged in successfully",
 	})
+}
+
+func (uc *UserController) GetProfile(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	userID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+	user, err := uc.userUsecase.GetUserProfile(userID)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	if user == nil {
+		ctx.JSON(http.StatusNotFound, gin.H{"error": "user not found"})
+		return
+	}
+	ctx.JSON(http.StatusOK, user)
 }
 
 func (uc *UserController) Promote(ctx *gin.Context) {

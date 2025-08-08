@@ -202,3 +202,28 @@ func (s *UserRepositoryTestSuite) TestFetch_NotFound() {
 	_, err := s.repo.Fetch("1")
 	s.Error(err)
 }
+
+func (s *UserRepositoryTestSuite) TestGetUserProfile_Success() {
+	user := domain.User{ID: 1, Email: "test@example.com", Username: "testuser"}
+	rows := sqlmock.NewRows([]string{"id", "email", "username"}).
+		AddRow(user.ID, user.Email, user.Username)
+	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE "users"."id" = $1 AND "users"."deleted_at" IS NULL ORDER BY "users"."id" LIMIT $2`)).
+		WithArgs(user.ID, 1).
+		WillReturnRows(rows)
+
+	foundUser, err := s.repo.GetUserProfile(user.ID)
+	s.NoError(err)
+	s.Equal(user.ID, foundUser.ID)
+	s.Equal(user.Email, foundUser.Email)
+	s.Equal(user.Username, foundUser.Username)
+}
+
+func (s *UserRepositoryTestSuite) TestGetUserProfile_NotFound() {
+	s.mock.ExpectQuery(regexp.QuoteMeta(`SELECT * FROM "users" WHERE "users"."id" = $1 AND "users"."deleted_at" IS NULL ORDER BY "users"."id" LIMIT $2`)).
+		WithArgs(int64(2), 1).
+		WillReturnError(gorm.ErrRecordNotFound)
+
+	user, err := s.repo.GetUserProfile(2)
+	s.NoError(err)
+	s.Nil(user)
+}

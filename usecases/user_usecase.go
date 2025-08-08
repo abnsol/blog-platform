@@ -174,6 +174,14 @@ func (uu *UserUsecase) ActivateAccount(id string) error {
 	return nil
 }
 
+func (uu UserUsecase) GetUserProfile(userID int64) (*domain.User, error) {
+	user, err := uu.userRepo.GetUserProfile(userID)
+	if err != nil {
+		return nil, err
+	}
+	return user, nil
+}
+
 func (uu *UserUsecase) Promote(id string) error {
 	_, err := uu.userRepo.Fetch(id)
 	if err != nil {
