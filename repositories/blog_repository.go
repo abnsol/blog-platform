@@ -43,13 +43,13 @@ func (r *BlogRepository) LinkTagToBlog(ctx context.Context, blogID int64, tagID 
 	return r.db.WithContext(ctx).Create(&tagBlog).Error
 }
 
-
 func (r *BlogRepository) FetchByID(ctx context.Context, id int64) (*domain.Blog, error) {
 	var blog domain.Blog
 	if err := r.db.WithContext(ctx).Preload("User").Preload("Tags").First(&blog, id).Error; err != nil {
 		return nil, err
 	}
 	return &blog, nil
+}
 
 func (r *BlogRepository) FetchAll(ctx context.Context) ([]*domain.Blog, error) {
 	var blogs []*domain.Blog

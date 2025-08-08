@@ -32,6 +32,7 @@ func (m *MockBlogRepo) FetchByID(ctx context.Context, id int64) (*domain.Blog, e
 		return blog, args.Error(1)
 	}
 	return nil, args.Error(1)
+}
 
 func (m *MockBlogRepo) FetchAll(ctx context.Context) ([]*domain.Blog, error) {
 	args := m.Called(ctx)
