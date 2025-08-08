@@ -83,3 +83,24 @@ func (ur *UserRepository) GetUserProfile(userId int64) (*domain.User, error) {
 	}
 	return &user, nil
 }
+
+func (ur *UserRepository) UpdateUserProfile(userID int64, updates map[string]interface{}) error {
+	allowedFields := map[string]bool{
+		"Username":       true,
+		"Email":          true,
+		"Bio":            true,
+		"ProfilePicture": true,
+		"Phone":          true,
+		"Status":         true,
+	}
+	filteredUpdates := make(map[string]interface{})
+	for k, v := range updates {
+		if allowedFields[k] {
+			filteredUpdates[k] = v
+		}
+	}
+	if len(filteredUpdates) == 0 {
+		return nil
+	}
+	return ur.DB.Model(&domain.User{}).Where("id = ?", userID).Updates(filteredUpdates).Error
+}

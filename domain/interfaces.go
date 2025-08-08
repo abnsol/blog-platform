@@ -44,6 +44,7 @@ type IUserUsecase interface {
 	ActivateAccount(id string) error
 	Login(identifier string, password string) (string, string, error)
 	GetUserProfile(userID int64) (*User, error)
+	UpdateUserProfile(userID int64, updates map[string]interface{}) error
 }
 
 type IUserRepository interface {
@@ -53,6 +54,7 @@ type IUserRepository interface {
 	ActivateAccount(idStr string) error
 	Fetch(idStr string) (User, error)
 	GetUserProfile(userID int64) (*User, error)
+	UpdateUserProfile(userID int64, updates map[string]interface{}) error
 }
 
 type IUserController interface {
@@ -60,4 +62,5 @@ type IUserController interface {
 	ActivateAccount(ctx *context.Context)
 	Login(ctx *context.Context)
 	GetProfile(ctx *context.Context)
+	UpdateProfile(ctx *context.Context)
 }

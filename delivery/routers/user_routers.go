@@ -24,4 +24,5 @@ func AuthRoutes(group *gin.RouterGroup) {
 	group.POST("/register", uc.Register)
 	group.POST("/login", uc.Login)
 	group.GET("/users/:id", ao.AccountOwnerMiddleware(), uc.GetProfile)
+	group.PATCH("/users/:id", ao.AccountOwnerMiddleware(), uc.UpdateProfile)
 }
