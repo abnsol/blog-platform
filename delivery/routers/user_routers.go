@@ -19,7 +19,14 @@ func AuthRoutes(group *gin.RouterGroup) {
 	js := infrastructure.NewJWTInfrastructure([]byte(os.Getenv("JWT_ACCESS_SECRET")), []byte(os.Getenv("JWT_REFRESH_SECRET")), tr)
 	uu := usecases.NewUserUsecase(ur, ei, pi, js, tr)
 	uc := controllers.NewUserController(uu)
+	mw := infrastructure.NewMiddleware(js)
 
 	group.POST("/register", uc.Register)
 	group.POST("/login", uc.Login)
+	adminRoutes := group.Group("/users")
+	adminRoutes.Use(mw.AuthMiddleware(), mw.AdminMiddleware())
+	{
+		adminRoutes.PUT("/:id/promote", uc.Promote)
+		adminRoutes.PUT("/:id/demote", uc.Demote)
+	}
 }
