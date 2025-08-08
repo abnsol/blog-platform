@@ -44,6 +44,7 @@ type IUserUsecase interface {
 	ActivateAccount(id string) error
 	Login(identifier string, password string) (string, string, error)
 	GetUserProfile(userID int64) (*User, error)
+	RefreshToken(authHeader string) (string, string, error)
 }
 
 type IUserRepository interface {
@@ -60,4 +61,5 @@ type IUserController interface {
 	ActivateAccount(ctx *context.Context)
 	Login(ctx *context.Context)
 	GetProfile(ctx *context.Context)
+	RefreshToken(ctx *context.Context)
 }

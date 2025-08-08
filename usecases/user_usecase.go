@@ -131,6 +131,36 @@ func (uu *UserUsecase) Login(identifier string, password string) (string, string
 	return accessToken, refreshToken, nil
 }
 
+func (uu *UserUsecase) RefreshToken(authHeader string) (string, string, error) {
+	claims, err := uu.jwtService.ValidateRefreshToken(authHeader)
+	if err != nil {
+		return "", "", err
+	}
+
+	accessToken, err := uu.jwtService.GenerateAccessToken(claims.UserID, claims.UserRole)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err := uu.jwtService.GenerateRefreshToken(claims.UserID, claims.UserRole)
+	if err != nil {
+		return "", "", err
+	}
+
+	// persist new tokens
+	uid, _ := strconv.ParseInt(claims.UserID, 10, 64)
+	accessTokenObj := domain.Token{Type: "access", Content: accessToken, Status: "active", UserID: uid}
+	refreshTokenObj := domain.Token{Type: "refresh", Content: refreshToken, Status: "active", UserID: uid}
+	if err = uu.tokenRepo.Save(&accessTokenObj); err != nil {
+		return "", "", err
+	}
+	if err = uu.tokenRepo.Save(&refreshTokenObj); err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
 func (uu *UserUsecase) validatePassword(password string) bool {
 	var (
 		hasMinLen  = false

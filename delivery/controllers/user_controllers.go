@@ -102,3 +102,13 @@ func (uc *UserController) GetProfile(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, user)
 }
+
+func (uc *UserController) RefreshToken(ctx *gin.Context) {
+	authHeader := ctx.GetHeader("Authorization")
+	access, refresh, err := uc.userUsecase.RefreshToken(authHeader)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"access": access, "refresh": refresh})
+}
