@@ -12,20 +12,20 @@ import (
 )
 
 type UserUsecase struct {
-	userRepo domain.IUserRepository
-	emailService domain.IEmailInfrastructure
+	userRepo        domain.IUserRepository
+	emailService    domain.IEmailInfrastructure
 	passwordService domain.IPasswordInfrastructure
-	jwtService domain.IJWTInfrastructure
-	tokenRepo domain.ITokenRepository
+	jwtService      domain.IJWTInfrastructure
+	tokenRepo       domain.ITokenRepository
 }
 
 func NewUserUsecase(ur domain.IUserRepository, es domain.IEmailInfrastructure, ps domain.IPasswordInfrastructure, js domain.IJWTInfrastructure, tr domain.ITokenRepository) *UserUsecase {
 	return &UserUsecase{
-		userRepo: ur,
-		emailService: es,
+		userRepo:        ur,
+		emailService:    es,
 		passwordService: ps,
-		jwtService: js,
-		tokenRepo: tr,
+		jwtService:      js,
+		tokenRepo:       tr,
 	}
 }
 
@@ -59,7 +59,6 @@ func (uu *UserUsecase) Register(user *domain.User) (domain.User, error) {
 		return domain.User{}, errors.New(err.Error())
 	}
 
-
 	registeredUser, err := uu.userRepo.Register(user)
 	if err != nil {
 		return domain.User{}, errors.New("unable to register user")
@@ -84,16 +83,16 @@ func (uu *UserUsecase) Login(identifier string, password string) (string, string
 
 		user, err = uu.userRepo.FetchByEmail(identifier)
 		if err != nil {
-			return  "", "", errors.New("invalid identifier")
+			return "", "", errors.New("invalid identifier")
 		}
 	}
 
 	if !uu.validatePassword(password) {
-		return  "", "", errors.New("invalid password format")
+		return "", "", errors.New("invalid password format")
 	}
 	err = uu.passwordService.ComparePassword([]byte(user.Password), []byte(password))
 	if err != nil {
-		return  "", "", errors.New("invalid credentials")
+		return "", "", errors.New("invalid credentials")
 	}
 
 	accessToken, err := uu.jwtService.GenerateAccessToken(strconv.FormatInt(user.ID, 10), user.Role)
@@ -107,16 +106,16 @@ func (uu *UserUsecase) Login(identifier string, password string) (string, string
 	}
 
 	accessTokenObj := domain.Token{
-		Type: "access",
+		Type:    "access",
 		Content: accessToken,
-		Status: "active",
-		UserID: user.ID,
+		Status:  "active",
+		UserID:  user.ID,
 	}
 	refreshTokenObj := domain.Token{
-		Type: "refresh",
+		Type:    "refresh",
 		Content: refreshToken,
-		Status: "active",
-		UserID: user.ID,
+		Status:  "active",
+		UserID:  user.ID,
 	}
 
 	err = uu.tokenRepo.Save(&accessTokenObj)
@@ -134,31 +133,31 @@ func (uu *UserUsecase) Login(identifier string, password string) (string, string
 
 func (uu *UserUsecase) validatePassword(password string) bool {
 	var (
-        hasMinLen  = false
-        hasUpper   = false
-        hasLower   = false
-        hasNumber  = false
-        hasSpecial = false
-    )
+		hasMinLen  = false
+		hasUpper   = false
+		hasLower   = false
+		hasNumber  = false
+		hasSpecial = false
+	)
 
-    if len(password) >= 8 {
-        hasMinLen = true
-    }
+	if len(password) >= 8 {
+		hasMinLen = true
+	}
 
-    for _, c := range password {
-        switch {
-        case unicode.IsUpper(c):
-            hasUpper = true
-        case unicode.IsLower(c):
-            hasLower = true
-        case unicode.IsNumber(c):
-            hasNumber = true
-        case unicode.IsPunct(c) || unicode.IsSymbol(c):
-            hasSpecial = true
-        }
-    }
+	for _, c := range password {
+		switch {
+		case unicode.IsUpper(c):
+			hasUpper = true
+		case unicode.IsLower(c):
+			hasLower = true
+		case unicode.IsNumber(c):
+			hasNumber = true
+		case unicode.IsPunct(c) || unicode.IsSymbol(c):
+			hasSpecial = true
+		}
+	}
 
-    return hasMinLen && hasUpper && hasLower && hasNumber && hasSpecial
+	return hasMinLen && hasUpper && hasLower && hasNumber && hasSpecial
 }
 
 func (uu *UserUsecase) ActivateAccount(id string) error {
@@ -173,4 +172,22 @@ func (uu *UserUsecase) ActivateAccount(id string) error {
 	}
 
 	return nil
+}
+
+func (uu *UserUsecase) Promote(id string) error {
+	_, err := uu.userRepo.Fetch(id)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	return uu.userRepo.Promote(id)
+}
+
+func (uu *UserUsecase) Demote(id string) error {
+	_, err := uu.userRepo.Fetch(id)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	return uu.userRepo.Demote(id)
 }
