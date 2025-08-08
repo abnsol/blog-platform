@@ -211,3 +211,28 @@ func (uu UserUsecase) GetUserProfile(userID int64) (*domain.User, error) {
 	}
 	return user, nil
 }
+
+func (uu *UserUsecase) ResetPassword(userID string, oldPassword string, newPassword string) error {
+	user, err := uu.userRepo.Fetch(userID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	if err := uu.passwordService.ComparePassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+		return errors.New("invalid old password")
+	}
+
+	if !uu.validatePassword(newPassword) {
+		return errors.New("password must be consisted of at least one uppercase character, one lowercase character, one punctuation character, one number and be at least of length 8")
+	}
+
+	hashed, err := uu.passwordService.HashPassword(newPassword)
+	if err != nil {
+		return errors.New("could not hash password")
+	}
+
+	if err := uu.userRepo.ResetPassword(userID, hashed); err != nil {
+		return errors.New("could not update password")
+	}
+	return nil
+}

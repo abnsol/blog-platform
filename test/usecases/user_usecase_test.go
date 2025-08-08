@@ -390,6 +390,57 @@ func (suite *UserUsecaseTestSuite) TestRefreshToken_SaveRefreshTokenError() {
 	suite.Error(err)
 }
 
+func (suite *UserUsecaseTestSuite) TestResetPassword_Success() {
+	user := domain.User{ID: 1, Password: "old_hashed"}
+	suite.userRepo.On("Fetch", "1").Return(user, nil)
+	suite.pwdService.On("ComparePassword", []byte("old_hashed"), []byte("OldPass123!")).Return(nil)
+	suite.pwdService.On("HashPassword", "NewPass123!").Return("new_hashed", nil)
+	suite.userRepo.On("ResetPassword", "1", "new_hashed").Return(nil)
+	err := suite.userUsecase.ResetPassword("1", "OldPass123!", "NewPass123!")
+	suite.NoError(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestResetPassword_UserNotFound() {
+	suite.userRepo.On("Fetch", "1").Return(domain.User{}, errors.New("not found"))
+	err := suite.userUsecase.ResetPassword("1", "OldPass123!", "NewPass123!")
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestResetPassword_InvalidOldPassword() {
+	user := domain.User{ID: 1, Password: "old_hashed"}
+	suite.userRepo.On("Fetch", "1").Return(user, nil)
+	suite.pwdService.On("ComparePassword", []byte("old_hashed"), []byte("WrongOld123!")).Return(errors.New("mismatch"))
+	err := suite.userUsecase.ResetPassword("1", "WrongOld123!", "NewPass123!")
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestResetPassword_InvalidNewPasswordFormat() {
+	user := domain.User{ID: 1, Password: "old_hashed"}
+	suite.userRepo.On("Fetch", "1").Return(user, nil)
+	suite.pwdService.On("ComparePassword", []byte("old_hashed"), []byte("OldPass123!")).Return(nil)
+	err := suite.userUsecase.ResetPassword("1", "OldPass123!", "weak")
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestResetPassword_HashError() {
+	user := domain.User{ID: 1, Password: "old_hashed"}
+	suite.userRepo.On("Fetch", "1").Return(user, nil)
+	suite.pwdService.On("ComparePassword", []byte("old_hashed"), []byte("OldPass123!")).Return(nil)
+	suite.pwdService.On("HashPassword", "NewPass123!").Return("", errors.New("hash fail"))
+	err := suite.userUsecase.ResetPassword("1", "OldPass123!", "NewPass123!")
+	suite.Error(err)
+}
+
+func (suite *UserUsecaseTestSuite) TestResetPassword_UpdateError() {
+	user := domain.User{ID: 1, Password: "old_hashed"}
+	suite.userRepo.On("Fetch", "1").Return(user, nil)
+	suite.pwdService.On("ComparePassword", []byte("old_hashed"), []byte("OldPass123!")).Return(nil)
+	suite.pwdService.On("HashPassword", "NewPass123!").Return("new_hashed", nil)
+	suite.userRepo.On("ResetPassword", "1", "new_hashed").Return(errors.New("db error"))
+	err := suite.userUsecase.ResetPassword("1", "OldPass123!", "NewPass123!")
+	suite.Error(err)
+}
+
 func TestUserUsecase(t *testing.T) {
 	suite.Run(t, new(UserUsecaseTestSuite))
 }
