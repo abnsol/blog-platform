@@ -116,6 +116,25 @@ func (uc *UserController) GetProfile(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, user)
 }
 
+func (uc *UserController) UpdateProfile(ctx *gin.Context) {
+	idParam := ctx.Param("id")
+	userID, err := strconv.ParseInt(idParam, 10, 64)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid user id"})
+		return
+	}
+	var updates map[string]interface{}
+	if err := ctx.ShouldBindJSON(&updates); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	err = uc.userUsecase.UpdateUserProfile(userID, updates)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "profile updated successfully"})
+}
 func (uc *UserController) RefreshToken(ctx *gin.Context) {
 	authHeader := ctx.GetHeader("Authorization")
 	access, refresh, err := uc.userUsecase.RefreshToken(authHeader)

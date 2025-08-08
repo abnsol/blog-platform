@@ -212,6 +212,10 @@ func (uu UserUsecase) GetUserProfile(userID int64) (*domain.User, error) {
 	return user, nil
 }
 
+func (uu UserUsecase) UpdateUserProfile(userID int64, updates map[string]interface{}) error {
+	return uu.userRepo.UpdateUserProfile(userID, updates)
+}
+
 func (uu *UserUsecase) ResetPassword(userID string, oldPassword string, newPassword string) error {
 	user, err := uu.userRepo.Fetch(userID)
 	if err != nil {
