@@ -9,13 +9,13 @@ import (
 
 type UserRegisterDTO struct {
 	Username string `json:"username"`
-	Email string `json:"email"`
+	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
 type UserLoginDTO struct {
 	Identifier string `json:"identifier"`
-	Password string `json:"password"`
+	Password   string `json:"password"`
 }
 
 type UserController struct {
@@ -28,7 +28,7 @@ func NewUserController(uu domain.IUserUsecase) *UserController {
 	}
 }
 
-func (uc *UserController) Register(ctx *gin.Context)  {
+func (uc *UserController) Register(ctx *gin.Context) {
 	var userInput UserRegisterDTO
 
 	if err := ctx.ShouldBindJSON(&userInput); err != nil {
@@ -37,7 +37,7 @@ func (uc *UserController) Register(ctx *gin.Context)  {
 	}
 
 	user := domain.User{
-		Email: userInput.Email,
+		Email:    userInput.Email,
 		Username: userInput.Username,
 		Password: userInput.Password,
 	}
@@ -58,7 +58,7 @@ func (uc *UserController) ActivateAccount(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": err})
 		return
 	}
-	
+
 	ctx.JSON(http.StatusOK, gin.H{"message": "user account activated"})
 }
 
@@ -77,8 +77,30 @@ func (uc *UserController) Login(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{
-		"access": accessToken,
+		"access":  accessToken,
 		"refresh": refreshToken,
 		"message": "Logged in successfully",
 	})
+}
+
+func (uc *UserController) Promote(ctx *gin.Context) {
+	id := ctx.Param("id")
+	err := uc.userUsecase.Promote(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "user promoted to admin"})
+}
+
+func (uc *UserController) Demote(ctx *gin.Context) {
+	id := ctx.Param("id")
+	err := uc.userUsecase.Demote(id)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{"message": "user demoted to user"})
 }
