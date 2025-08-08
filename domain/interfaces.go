@@ -10,7 +10,6 @@ type IBlogRepository interface {
 	LinkTagToBlog(ctx context.Context, blogID int64, tagID int64) error
 	FetchByID(ctx context.Context, id int64) (*Blog, error)
 	FetchAll(ctx context.Context) ([]*Blog, error)
-
 }
 
 type IBlogUsecase interface {
@@ -44,6 +43,8 @@ type IUserUsecase interface {
 	Register(user *User) (User, error)
 	ActivateAccount(id string) error
 	Login(identifier string, password string) (string, string, error)
+	Promote(id string) error
+	Demote(id string) error
 }
 
 type IUserRepository interface {
@@ -52,6 +53,8 @@ type IUserRepository interface {
 	FetchByEmail(email string) (User, error)
 	ActivateAccount(idStr string) error
 	Fetch(idStr string) (User, error)
+	Promote(idStr string) error
+	Demote(idStr string) error
 }
 
 type IUserController interface {
