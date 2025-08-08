@@ -66,6 +66,7 @@ func (c *BlogController) GetBlogByID(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, blog)
+}
 
 func (c *BlogController) GetBlogs(ctx *gin.Context) {
 	blogs, err := c.blogUsecase.FetchAllBlogs(ctx.Request.Context())

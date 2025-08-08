@@ -19,6 +19,11 @@ type UserLoginDTO struct {
 	Password   string `json:"password"`
 }
 
+type ResetPasswordDTO struct {
+	OldPassword string `json:"old_password"`
+	NewPassword string `json:"new_password"`
+}
+
 type UserController struct {
 	userUsecase domain.IUserUsecase
 }
@@ -101,4 +106,33 @@ func (uc *UserController) GetProfile(ctx *gin.Context) {
 		return
 	}
 	ctx.JSON(http.StatusOK, user)
+}
+
+func (uc *UserController) RefreshToken(ctx *gin.Context) {
+	authHeader := ctx.GetHeader("Authorization")
+	access, refresh, err := uc.userUsecase.RefreshToken(authHeader)
+	if err != nil {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"access": access, "refresh": refresh})
+}
+
+func (uc *UserController) ResetPassword(ctx *gin.Context) {
+	var body ResetPasswordDTO
+	if err := ctx.ShouldBindJSON(&body); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
+		return
+	}
+	userIDVal, exists := ctx.Get("user_id")
+	if !exists {
+		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+		return
+	}
+	userID, _ := userIDVal.(string)
+	if err := uc.userUsecase.ResetPassword(userID, body.OldPassword, body.NewPassword); err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	ctx.JSON(http.StatusOK, gin.H{"message": "password updated"})
 }

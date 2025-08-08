@@ -131,6 +131,36 @@ func (uu *UserUsecase) Login(identifier string, password string) (string, string
 	return accessToken, refreshToken, nil
 }
 
+func (uu *UserUsecase) RefreshToken(authHeader string) (string, string, error) {
+	claims, err := uu.jwtService.ValidateRefreshToken(authHeader)
+	if err != nil {
+		return "", "", err
+	}
+
+	accessToken, err := uu.jwtService.GenerateAccessToken(claims.UserID, claims.UserRole)
+	if err != nil {
+		return "", "", err
+	}
+
+	refreshToken, err := uu.jwtService.GenerateRefreshToken(claims.UserID, claims.UserRole)
+	if err != nil {
+		return "", "", err
+	}
+
+	// persist new tokens
+	uid, _ := strconv.ParseInt(claims.UserID, 10, 64)
+	accessTokenObj := domain.Token{Type: "access", Content: accessToken, Status: "active", UserID: uid}
+	refreshTokenObj := domain.Token{Type: "refresh", Content: refreshToken, Status: "active", UserID: uid}
+	if err = uu.tokenRepo.Save(&accessTokenObj); err != nil {
+		return "", "", err
+	}
+	if err = uu.tokenRepo.Save(&refreshTokenObj); err != nil {
+		return "", "", err
+	}
+
+	return accessToken, refreshToken, nil
+}
+
 func (uu *UserUsecase) validatePassword(password string) bool {
 	var (
 		hasMinLen  = false
@@ -180,4 +210,29 @@ func (uu UserUsecase) GetUserProfile(userID int64) (*domain.User, error) {
 		return nil, err
 	}
 	return user, nil
+}
+
+func (uu *UserUsecase) ResetPassword(userID string, oldPassword string, newPassword string) error {
+	user, err := uu.userRepo.Fetch(userID)
+	if err != nil {
+		return errors.New("user not found")
+	}
+
+	if err := uu.passwordService.ComparePassword([]byte(user.Password), []byte(oldPassword)); err != nil {
+		return errors.New("invalid old password")
+	}
+
+	if !uu.validatePassword(newPassword) {
+		return errors.New("password must be consisted of at least one uppercase character, one lowercase character, one punctuation character, one number and be at least of length 8")
+	}
+
+	hashed, err := uu.passwordService.HashPassword(newPassword)
+	if err != nil {
+		return errors.New("could not hash password")
+	}
+
+	if err := uu.userRepo.ResetPassword(userID, hashed); err != nil {
+		return errors.New("could not update password")
+	}
+	return nil
 }

@@ -51,3 +51,8 @@ func (m *MockUserRepository) GetUserProfile(userID int64) (*domain.User, error) 
 	user, _ := args.Get(0).(*domain.User)
 	return user, args.Error(1)
 }
+
+func (m *MockUserRepository) ResetPassword(idStr string, newPassword string) error {
+	args := m.Called(idStr, newPassword)
+	return args.Error(0)
+}
