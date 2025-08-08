@@ -45,3 +45,9 @@ func (m *MockUserRepository) Fetch(idStr string) (domain.User, error) {
 	}
 	return args.Get(0).(domain.User), args.Error(1)
 }
+
+func (m *MockUserRepository) GetUserProfile(userID int64) (*domain.User, error) {
+	args := m.Called(userID)
+	user, _ := args.Get(0).(*domain.User)
+	return user, args.Error(1)
+}
