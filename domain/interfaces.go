@@ -49,6 +49,8 @@ type IUserUsecase interface {
 	UpdateUserProfile(userID int64, updates map[string]interface{}) error
 	RefreshToken(authHeader string) (string, string, error)
 	ResetPassword(userID string, oldPassword string, newPassword string) error
+	ForgotPassword(email string) error
+	UpdatePasswordDirect(userID string, newPassword string, token string) error
 }
 
 type IUserRepository interface {
@@ -72,4 +74,6 @@ type IUserController interface {
 	UpdateProfile(ctx *context.Context)
 	RefreshToken(ctx *context.Context)
 	ResetPassword(ctx *context.Context)
+	ForgotPassword(ctx *context.Context)
+	UpdatePasswordDirect(ctx *context.Context)
 }
