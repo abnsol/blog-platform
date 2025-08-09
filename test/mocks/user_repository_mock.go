@@ -59,5 +59,15 @@ func (m *MockUserRepository) Promote(idStr string) error {
 
 func (m *MockUserRepository) Demote(idStr string) error {
 	args := m.Called(idStr)
+  return args.Error(0)
+}
+
+func (m *MockUserRepository) UpdateUserProfile(userID int64, updates map[string]interface{}) error {
+	args := m.Called(userID, updates)
+	return args.Error(0)
+}
+
+func (m *MockUserRepository) ResetPassword(idStr string, newPassword string) error {
+	args := m.Called(idStr, newPassword)
 	return args.Error(0)
 }
