@@ -214,10 +214,10 @@ func (uu UserUsecase) GetUserProfile(userID int64) (*domain.User, error) {
 
 func (uu *UserUsecase) Promote(id string) error {
 	_, err := uu.userRepo.Fetch(id)
-  if err != nil {
+	if err != nil {
 		return errors.New("user not found")
 	}
-  return uu.userRepo.Promote(id)
+	return uu.userRepo.Promote(id)
 }
 
 func (uu *UserUsecase) Demote(id string) error {
@@ -235,10 +235,10 @@ func (uu UserUsecase) UpdateUserProfile(userID int64, updates map[string]interfa
 
 func (uu *UserUsecase) ResetPassword(userID string, oldPassword string, newPassword string) error {
 	user, err := uu.userRepo.Fetch(userID)
-  if err != nil {
+	if err != nil {
 		return errors.New("user not found")
 	}
-  
+
 	if err := uu.passwordService.ComparePassword([]byte(user.Password), []byte(oldPassword)); err != nil {
 		return errors.New("invalid old password")
 	}

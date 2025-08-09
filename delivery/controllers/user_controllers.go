@@ -128,6 +128,7 @@ func (uc *UserController) Demote(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, gin.H{"message": "user demoted to user"})
+}
   
 func (uc *UserController) UpdateProfile(ctx *gin.Context) {
 	idParam := ctx.Param("id")
@@ -148,6 +149,7 @@ func (uc *UserController) UpdateProfile(ctx *gin.Context) {
 	}
 	ctx.JSON(http.StatusOK, gin.H{"message": "profile updated successfully"})
 }
+
 func (uc *UserController) RefreshToken(ctx *gin.Context) {
 	authHeader := ctx.GetHeader("Authorization")
 	access, refresh, err := uc.userUsecase.RefreshToken(authHeader)
