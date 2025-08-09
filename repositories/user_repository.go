@@ -132,7 +132,7 @@ func (ur *UserRepository) UpdateUserProfile(userID int64, updates map[string]int
 	}
 	return ur.DB.Model(&domain.User{}).Where("id = ?", userID).Updates(filteredUpdates).Error
 }
-  
+
 func (ur *UserRepository) ResetPassword(idStr string, newPassword string) error {
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -147,3 +147,6 @@ func (ur *UserRepository) ResetPassword(idStr string, newPassword string) error 
 	if err := ur.DB.Model(&user).Update("password", newPassword).Error; err != nil {
 		return errors.New(err.Error())
 	}
+
+	return nil
+}
